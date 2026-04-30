@@ -34,6 +34,8 @@ public class WorkExperienceDto {
 
     private EmploymentType employmentType;
 
+    // private Boolean hasWorkExperience;
+    
     private String country;
     private Region region;
     private District district;

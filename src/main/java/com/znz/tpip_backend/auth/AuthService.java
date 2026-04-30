@@ -1,7 +1,5 @@
 package com.znz.tpip_backend.auth;
 
-import java.time.LocalDate;
-
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -48,22 +46,17 @@ public class AuthService {
         user.setMobileNumber(request.getMobileNumber());
         user.setPassword(passwordEncoder.encode(request.getPassword()));
         user.setRole(UserRole.APPLICANT);
-        user.setIsVerified(false);
 
         // 5. Create Applicant
         Applicant applicant = new Applicant();
         applicant.setUser(user);
         applicant.setIndexNumber(request.getIndexNumber());
 
-        // 6. Generate system index
-        String applicationIndex = generateApplicationIndex();
-        applicant.setApplicationIndexNumber(applicationIndex);
-
         user.setApplicant(applicant);
 
         userRepository.save(user);
 
-        return "Account created successfully. Your Application Index is: " + applicationIndex;
+        return "Account created successfully";
     }
 
     // ================= LOGIN =================
@@ -78,10 +71,6 @@ public class AuthService {
             throw new RuntimeException("Invalid credentials");
         }
 
-        // 3. Check verification
-        if (!user.getIsVerified()) {
-            throw new RuntimeException("Account not verified");
-        }
         Applicant applicant = user.getApplicant();
 
         LoginResponse response = new LoginResponse();
@@ -89,19 +78,49 @@ public class AuthService {
         response.setApplicantId(applicant.getId());
         response.setEmail(user.getEmail());
         response.setRole(user.getRole().name());
-        response.setApplicationIndexNumber(applicant.getApplicationIndexNumber());
 
         return response;
-
     }
 
-    // ================= INDEX GENERATOR =================
-    private String generateApplicationIndex() {
-
-        String year = String.valueOf(LocalDate.now().getYear());
-
-        long count = applicantRepository.count() + 1;
-
-        return String.format("INT/%s/%05d", year, count);
-    }
 }
+// REGISTER
+//   {
+//     "firstName": "Amina",
+//     "middleName": "Salum",
+//     "lastName": "Hassan",
+//     "email": "amina@gmail.com",
+//     "mobileNumber": "0712345678",
+//     "password": "Amina@123",
+//     "indexNumber": "S1234/001/2020"
+//   }
+//   {
+//     "firstName": "Mohamed",
+//     "middleName": "Ali",
+//     "lastName": "Juma",
+//     "email": "mohamed@gmail.com",
+//     "mobileNumber": "0756789123",
+//     "password": "Moha@456",
+//     "indexNumber": "S5678/002/2019"
+//   }
+//   {
+//     "firstName": "Fatma",
+//     "middleName": "Omar",
+//     "lastName": "Said",
+//     "email": "fatma@gmail.com",
+//     "mobileNumber": "0789456123",
+//     "password": "Fatma@789",
+//     "indexNumber": "S9101/003/2021"
+//   }
+// LOGIN 
+//   {
+//     "email": "amina@gmail.com",
+//     "password": "Amina@123"
+//   }
+//   {
+//     "email": "mohamed@gmail.com",
+//     "password": "Moha@456"
+//   }
+//   {
+//     "email": "fatma@gmail.com",
+//     "password": "Fatma@789"
+//   }

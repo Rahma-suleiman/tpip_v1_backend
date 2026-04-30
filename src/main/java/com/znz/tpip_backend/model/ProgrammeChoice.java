@@ -10,25 +10,18 @@ import lombok.*;
 @Builder
 @Entity
 @Table(name = "programme_choices")
-public class ProgrammeChoice {
+public class ProgrammeChoice extends AuditModel<String> {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // ================= RELATIONSHIP =================
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "application_id", nullable = false)
-    private Application application;
-
-    // ================= PROGRAMME INFO =================
-    // @ManyToOne
-    // @JoinColumn(name = "programme_id", nullable = false)
-    // private Programme programme;
-
-    // ================= RANKING =================
+    // Preference rank = order of priority chosen by the applicant
+    // It tells the system:“Which programme do I want MOST, second, and third?”
     @Column(nullable = false)
     private Integer preferenceRank; // 1, 2, 3
+
+    private Integer matchScore;
 
     // ================= ELIGIBILITY =================
     private Boolean isEligible;
@@ -37,8 +30,23 @@ public class ProgrammeChoice {
     private String eligibilityRemark;
 
     // ================= OVERRIDE =================
-    private Boolean overrideRequested = false;
+    // private Boolean overrideRequested = false;
 
-    @Column(columnDefinition = "TEXT")
-    private String overrideReason;
+    // @Column(columnDefinition = "TEXT")
+    // private String overrideReason;
+
+    // fk
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "application_id", nullable = false)
+    private Application application;
+
+    @ManyToOne
+    @JoinColumn(name = "programme_id", nullable = false)
+    private Programme programme;
 }
+
+// GOAL (What we’re building)
+// Instead of:
+// ❌ Not eligible → override?
+// We do:
+// ❌ Not eligible → Here are better programmes for you ✅

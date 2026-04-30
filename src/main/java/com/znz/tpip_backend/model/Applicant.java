@@ -23,11 +23,11 @@ public class Applicant extends AuditModel<String> {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    @Column(nullable = false, unique = true, updatable = false)
-    private String applicationIndexNumber;
-
+   
     @Column(nullable = false, unique = true, updatable = false)
     private String indexNumber;
+
+    private Boolean hasWorkExperience;
 
     // reverse
     @OneToOne(mappedBy = "applicant", cascade = CascadeType.ALL)

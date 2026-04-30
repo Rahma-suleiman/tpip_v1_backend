@@ -3,8 +3,7 @@ package com.znz.tpip_backend.model;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.List;
+
 
 import com.znz.tpip_backend.enums.*;
 
@@ -70,7 +69,4 @@ public class PersonalInfo extends AuditModel<String> {
     @JoinColumn(name = "applicant_id", nullable = false, unique = true)
     private Applicant applicant;
     
-    // reverse
-    @OneToMany(mappedBy = "personalInfo", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Document> documents = new ArrayList<>();
 }

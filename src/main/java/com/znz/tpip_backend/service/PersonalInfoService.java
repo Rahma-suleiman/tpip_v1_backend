@@ -10,7 +10,6 @@ import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -88,15 +87,68 @@ public class PersonalInfoService {
         // FK
         dto.setApplicantId(info.getApplicant().getId());
 
-        // reverse
-        if (info.getDocuments() != null) {
-            dto.setDocumentIds(
-                    info.getDocuments()
-                            .stream()
-                            .map(Document::getId)
-                            .collect(Collectors.toList()));
-        }
 
         return dto;
     }
 }
+
+//  {
+//     "firstName": "Amina",
+//     "middleName": "Salum",
+//     "lastName": "Hassan",
+//     "dateOfBirth": "2000-05-12",
+//     "gender": "FEMALE",
+//     "nationality": "Tanzanian",
+//     "phoneNumber": "0712345678",
+//     "alternativePhone": "0788888888",
+//     "email": "amina@gmail.com",
+//     "region": "URBAN_WEST",
+//     "district": "MJINI",
+//     "nextOfKinName": "Salum Hassan",
+//     "nextOfKinRelationship": "FATHER",
+//     "nextOfKinPhone": "0711111111",
+//     "hasDisability": false,
+//     "disabilityType": "NONE",
+//     "disabilityNeeds": "",
+//     "applicantId": 1
+//   }
+//   {
+//     "firstName": "Mohamed",
+//     "middleName": "Ali",
+//     "lastName": "Juma",
+//     "dateOfBirth": "1999-08-21",
+//     "gender": "MALE",
+//     "nationality": "Tanzanian",
+//     "phoneNumber": "0756789123",
+//     "alternativePhone": "0750000000",
+//     "email": "mohamed@gmail.com",
+//     "region": "URBAN_WEST",
+//     "district": "KUSINI",
+//     "nextOfKinName": "Ali Juma",
+//     "nextOfKinRelationship": "FATHER",
+//     "nextOfKinPhone": "0751111111",
+//     "hasDisability": false,
+//     "disabilityType": "NONE",
+//     "disabilityNeeds": "",
+//     "applicantId": 2
+//   }
+//   {
+//     "firstName": "Fatma",
+//     "middleName": "Omar",
+//     "lastName": "Said",
+//     "dateOfBirth": "2001-01-10",
+//     "gender": "FEMALE",
+//     "nationality": "Tanzanian",
+//     "phoneNumber": "0789456123",
+//     "alternativePhone": "0780000000",
+//     "email": "fatma@gmail.com",
+//     "region": "URBAN_WEST",
+//     "district": "WETE",
+//     "nextOfKinName": "Omar Said",
+//     "nextOfKinRelationship": "FATHER",
+//     "nextOfKinPhone": "0781111111",
+//     "hasDisability": false,
+//     "disabilityType": "NONE",
+//     "disabilityNeeds": "",
+//     "applicantId": 3
+//   }

@@ -3,62 +3,40 @@ package com.znz.tpip_backend.model;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.time.LocalDateTime;
+
 import com.znz.tpip_backend.enums.RefereeStatus;
 
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
 @Entity
 @Table(name = "referees")
-public class Referee extends AuditModel<String>{
+@Getter
+@Setter
+public class Referee {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // ================= RELATIONSHIP =================
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "application_id", nullable = false)
-    private Application application;
-
-    // ================= REFEREE INFO =================
-    @Column(nullable = false)
     private String fullName;
-
     private String title;
-
-    private String institution;
-
-    @Column(nullable = false)
+    private String organization;
     private String email;
-
     private String phone;
+    private String relationship;
 
-    private String relationshipToApplicant;
+    // recommendation data (Step 5 form)
+    private Integer rating;
+    private String narrative;
+    private boolean declarationAccepted;
 
-    // ================= INVITATION SYSTEM =================
-    private String inviteToken;
+    private String token;
+    private LocalDateTime tokenExpiry;
+    private LocalDateTime submittedAt;
 
-    private Boolean inviteSent = false;
-
-    private Boolean linkUsed = false;
-
-    // ================= STATUS =================
     @Enumerated(EnumType.STRING)
     private RefereeStatus status = RefereeStatus.PENDING;
-}
-// FLOW
-// 1. Applicant adds referee details
-// 2. System generates inviteToken
-// 3. System sends email link
-// 4. Referee opens secure form
-// 5. Referee submits evaluation
-// 6. System updates status:
 
-//    PENDING → INVITED → SUBMITTED
-//                  ↓
-//               OVERDUE (if timeout)
-//                  ↓
-//               REMINDED (if re-sent)
+    @ManyToOne
+    @JoinColumn(name = "application_id")
+    private Application application;
+}

@@ -1,51 +1,127 @@
-// package com.znz.tpip_backend.controller;
+package com.znz.tpip_backend.controller;
 
-// import java.util.List;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
 
-// import org.springframework.beans.factory.annotation.Autowired;
-// import org.springframework.http.HttpStatus;
-// import org.springframework.http.ResponseEntity;
-// import org.springframework.web.bind.annotation.*;
-
+import com.znz.tpip_backend.enums.ApplicationStatus;
+import com.znz.tpip_backend.enums.ApplicationStep;
 // import com.znz.tpip_backend.dto.ApplicationDto;
-// import com.znz.tpip_backend.service.ApplicationService;
+import com.znz.tpip_backend.model.Applicant;
+import com.znz.tpip_backend.model.Application;
+import com.znz.tpip_backend.model.User;
+import com.znz.tpip_backend.repository.UserRepository;
+import com.znz.tpip_backend.service.ApplicationService;
 
+import lombok.RequiredArgsConstructor;
 
+@RestController
+@RequestMapping("/api/v1/tpip/application")
+@RequiredArgsConstructor
+public class ApplicationController {
+
+    private final ApplicationService applicationService;
+    private final UserRepository userRepository;
+
+    // START APPLICATION
+    @GetMapping("/start")
+    public ResponseEntity<Application> startApplication(@RequestParam Long userId) {
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        Applicant applicant = user.getApplicant();
+
+        Application app = applicationService.createOrGetApplication(applicant.getId());
+
+        return ResponseEntity.ok(app);
+    }
+
+    // MOVE STEP
+    @PutMapping("/{id}/step")
+    public ResponseEntity<Application> moveStep(
+            @PathVariable Long id,
+            @RequestParam ApplicationStep step) {
+
+        return ResponseEntity.ok(applicationService.moveToStep(id, step));
+    }
+
+    // SUBMIT APPLICATION
+    @PostMapping("/{id}/submit")
+    public ResponseEntity<Application> submit(@PathVariable Long id) {
+
+        return ResponseEntity.ok(applicationService.submitApplication(id));
+    }
+
+    // UPDATE STATUS (ADMIN)
+    @PutMapping("/{id}/status")
+    public ResponseEntity<Application> updateStatus(
+            @PathVariable Long id,
+            @RequestParam ApplicationStatus status) {
+
+        return ResponseEntity.ok(applicationService.updateStatus(id, status));
+    }
+}
 // @RestController
 // @RequestMapping("/api/v1/tpip/application")
+// @RequiredArgsConstructor
 // public class ApplicationController {
 
-//     @Autowired
-//     private ApplicationService applicationService;
+//     private final ApplicationService applicationService;
+//     private final UserRepository userRepository;
 
-//     @GetMapping
-//     public ResponseEntity<List<ApplicationDto>> getAllApplications() {
-//         List<ApplicationDto> applications = applicationService.getAllApplications();
-//         return new ResponseEntity<>(applications, HttpStatus.OK);        
-//     }
+//     // ================= START APPLICATION =================
+//     @GetMapping("/start")
+//     public ResponseEntity<Application> startApplication(@RequestParam Long userId) {
 
-//     @GetMapping("/{id}")
-//     public ResponseEntity<ApplicationDto> getApplicationById(@PathVariable Long id) {
-//         ApplicationDto app = applicationService.getApplicationById(id);
-//         return ResponseEntity.ok(app);       
-//     }
-  
-    
-//     @PostMapping
-//     public ResponseEntity<ApplicationDto> submitApplication(@RequestBody ApplicationDto applicationDto) {
-//         ApplicationDto application = applicationService.submitApplication(applicationDto);
-//         return new ResponseEntity<>(application, HttpStatus.CREATED);        
-//     }
-//     @PutMapping("/{id}")
-//     public ResponseEntity<ApplicationDto> editApplication(@PathVariable Long id, @RequestBody ApplicationDto applicationDto){
-//         ApplicationDto application = applicationService.editApplication(id, applicationDto);
-//         return new ResponseEntity<>(application, HttpStatus.OK);        
+//         User user = userRepository.findById(userId)
+//                 .orElseThrow(() -> new RuntimeException("User not found"));
+
+//         Applicant applicant = user.getApplicant();
+
+//         Application app = applicationService.createOrGetApplication(applicant.getId());
+
+//         return ResponseEntity.ok(app);
 //     }
 
-//     @DeleteMapping("/{id}")
-//     public ResponseEntity<Void> deleteApplication(@PathVariable Long id) {
-//         applicationService.deleteApplication(id);
-//         return ResponseEntity.noContent().build();
+//     // ================= MOVE STEP =================
+//     @PutMapping("/{id}/step")
+//     public ResponseEntity<Application> moveStep(
+//             @PathVariable Long id,
+//             @RequestParam ApplicationStep step) {
+
+//         return ResponseEntity.ok(applicationService.moveToStep(id, step));
 //     }
-    
+
+//     // ================= SUBMIT =================
+//     @PutMapping("/{id}/submit")
+//     public ResponseEntity<Application> submit(@PathVariable Long id) {
+//         return ResponseEntity.ok(applicationService.submitApplication(id));
+//     }
+
+//     // ================= ADMIN ACTIONS =================
+
+//     @PutMapping("/{id}/review")
+//     public ResponseEntity<Application> review(@PathVariable Long id) {
+//         return ResponseEntity.ok(applicationService.markUnderReview(id));
+//     }
+
+//     @PutMapping("/{id}/interview")
+//     public ResponseEntity<Application> interview(@PathVariable Long id) {
+//         return ResponseEntity.ok(applicationService.markForInterview(id));
+//     }
+
+//     @PutMapping("/{id}/accept")
+//     public ResponseEntity<Application> accept(@PathVariable Long id) {
+//         return ResponseEntity.ok(applicationService.acceptApplication(id));
+//     }
+
+//     @PutMapping("/{id}/reject")
+//     public ResponseEntity<Application> reject(@PathVariable Long id) {
+//         return ResponseEntity.ok(applicationService.rejectApplication(id));
+//     }
+
+//     @PutMapping("/{id}/waitlist")
+//     public ResponseEntity<Application> waitlist(@PathVariable Long id) {
+//         return ResponseEntity.ok(applicationService.waitlistApplication(id));
+//     }
 // }

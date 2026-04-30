@@ -10,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -24,7 +25,7 @@ public class EducationService {
     // ================= CREATE =================
     public EducationDto create(EducationDto dto) {
 
-        validateEducation(dto); // It acts as a gatekeeper before data enters your DB(Prevents empty/incomplete records). If data is invalid → it throws error and stops everything
+        validateEducation(dto);
 
         Applicant applicant = applicantRepository.findById(dto.getApplicantId())
                 .orElseThrow(() -> new RuntimeException("Applicant not found"));
@@ -33,27 +34,26 @@ public class EducationService {
 
         modelMapper.map(dto, education);
 
-        // FK
         education.setApplicant(applicant);
 
-        // SUBJECTS
+        education.setSubjects(new ArrayList<>());
+
         mapSubjects(dto, education);
 
-        return mapToDto(educationRepository.save(education));
+        Education saved = educationRepository.save(education);
+
+        return mapToDto(saved);
     }
 
     // ================= UPDATE =================
     public EducationDto update(Long id, EducationDto dto) {
 
-        validateEducation(dto); // ✅ FIXED
+        validateEducation(dto);
 
         Education education = educationRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Education not found"));
 
         modelMapper.map(dto, education);
-
-        // DO NOT change applicant (important)
-        // education.setApplicant(...) ❌ NOT ALLOWED
 
         // reset subjects
         education.getSubjects().clear();
@@ -147,26 +147,32 @@ public class EducationService {
     }
 
     private boolean isBlank(String value) {
-        return value == null || value.trim().isEmpty();
+        return value == null || value.trim().isEmpty(); //After removing spaces(.trim()), is the string empty
     }
 
     // ================= SUBJECT MAPPER =================
     private void mapSubjects(EducationDto dto, Education education) {
 
-        if (dto.getSubjects() == null) return;
+        // ensure list exists
+        if (education.getSubjects() == null) {
+            education.setSubjects(new ArrayList<>());
+        }
 
-        List<EducationSubject> subjects = dto.getSubjects()
-                .stream()
-                .map(s -> {
-                    EducationSubject subject = new EducationSubject();
-                    subject.setSubjectName(s.getSubjectName());
-                    subject.setGrade(s.getGrade());
-                    subject.setEducation(education);
-                    return subject;
-                })
-                .collect(Collectors.toList());
+        // clear existing (important for orphanRemoval)
+        education.getSubjects().clear();
 
-        education.getSubjects().addAll(subjects);
+        if (dto.getSubjects() != null) {
+
+            for (EducationSubjectDto s : dto.getSubjects()) {
+
+                EducationSubject subject = new EducationSubject();
+                subject.setSubjectName(s.getSubjectName());
+                subject.setGrade(s.getGrade());
+                subject.setEducation(education);
+
+                education.getSubjects().add(subject); // ✅ ADD, NOT SET
+            }
+        }
     }
 
     private EducationDto mapToDto(Education education) {
@@ -183,8 +189,7 @@ public class EducationService {
                                 sd.setSubjectName(s.getSubjectName());
                                 sd.setGrade(s.getGrade());
                                 return sd;
-                            }).collect(Collectors.toList())
-            );
+                            }).collect(Collectors.toList()));
         }
 
         if (education.getDocuments() != null) {
@@ -192,10 +197,46 @@ public class EducationService {
                     education.getDocuments()
                             .stream()
                             .map(Document::getId)
-                            .collect(Collectors.toList())
-            );
+                            .collect(Collectors.toList()));
         }
 
         return dto;
     }
 }
+
+// {
+//   "level": "O_LEVEL",
+//   "institutionName": "Jangwani Secondary School",
+//   "completionYear": 2020,
+//   "description": "O-Level Certificate",
+//   "applicantId": 1,
+//   "subjects": [
+//     { "subjectName": "Mathematics", "grade": "A" },
+//     { "subjectName": "Physics", "grade": "B" },
+//     { "subjectName": "Chemistry", "grade": "A" }
+//   ]
+// }
+// {
+//   "level": "A_LEVEL",
+//   "institutionName": "Ilala High School",
+//   "programmeName": "PCM",
+//   "completionYear": 2022,
+//   "description": "Advanced Certificate of Secondary Education",
+//   "applicantId": 2,
+//   "subjects": [
+//     { "subjectName": "Physics", "grade": "B+" },
+//     { "subjectName": "Mathematics", "grade": "A" },
+//     { "subjectName": "Chemistry", "grade": "A" }
+//   ]
+// }
+// {
+//   "level": "DIPLOMA",
+//   "institutionName": "Dar es Salaam Institute of Technology",
+//   "programmeName": "Information Technology",
+//   "completionYear": 2023,
+//   "gpa": "3.8",
+//   "classification": "FIRST",
+//   "description": "Diploma in IT",
+//   "applicantId": 3,
+//   "subjects": []
+// }

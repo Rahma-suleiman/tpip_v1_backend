@@ -34,7 +34,7 @@ public class User extends AuditModel<String> {
     private UserRole role;
 
     // Verification
-    private Boolean isVerified = false;
+    // private Boolean isVerified = false;
 
     // private String otpCode;
     // private LocalDateTime otpExpiry;

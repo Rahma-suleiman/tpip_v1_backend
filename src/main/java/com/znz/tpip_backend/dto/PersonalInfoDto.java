@@ -49,7 +49,5 @@ public class PersonalInfoDto {
 
     // fk
     private Long applicantId;
-    // reverse
-    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
-    private List<Long> documentIds;
+   
 }

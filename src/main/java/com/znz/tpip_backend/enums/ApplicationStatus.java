@@ -1,15 +1,23 @@
 package com.znz.tpip_backend.enums;
-
 public enum ApplicationStatus {
-    // PENDING,
-    // APPROVED,
-    // REJECTED
-    // OR
-    DRAFT,
-    SUBMITTED,
-    UNDER_REVIEW,
-    RETURNED,
-    APPROVED,
+
+    // Applicant stage
+    DRAFT,          // filling form
+
+    // Submission
+    SUBMITTED,      // submitted by applicant
+
+    // Review process
+    UNDER_REVIEW,   // being reviewed
+
+    // Interview stage (optional)
+    INTERVIEW_SCHEDULED,
+    INTERVIEWED,
+
+    // Final decisions
+    ACCEPTED,
     REJECTED,
-    WAITLISTED
+
+    // Post decision
+    PLACED
 }

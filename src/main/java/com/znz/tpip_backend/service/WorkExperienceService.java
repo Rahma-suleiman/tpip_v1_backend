@@ -19,18 +19,19 @@ public class WorkExperienceService {
     private final ApplicantRepository applicantRepository;
     private final ModelMapper modelMapper;
 
-    // ================= CREATE =================
     public WorkExperienceDto create(WorkExperienceDto dto) {
 
         Applicant applicant = applicantRepository.findById(dto.getApplicantId())
                 .orElseThrow(() -> new RuntimeException("Applicant not found"));
 
-        // ================= VALIDATION =================
+        if (Boolean.FALSE.equals(applicant.getHasWorkExperience())) {
+            throw new RuntimeException("Applicant marked as having NO work experience. Cannot add records.");
+        }
+
+        // VALIDATE ONLY IF EXPERIENCE EXISTS
         validate(dto);
 
-        // ================= ENTITY MAP =================
         WorkExperience work = modelMapper.map(dto, WorkExperience.class);
-
         work.setApplicant(applicant);
 
         WorkExperience saved = workExperienceRepository.save(work);
@@ -38,11 +39,16 @@ public class WorkExperienceService {
         return mapToDto(saved);
     }
 
-    // ================= UPDATE =================
     public WorkExperienceDto update(Long id, WorkExperienceDto dto) {
 
         WorkExperience work = workExperienceRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Work experience not found"));
+
+        Applicant applicant = work.getApplicant();
+
+        if (Boolean.FALSE.equals(applicant.getHasWorkExperience())) {
+            throw new RuntimeException("Applicant has no work experience. Update not allowed.");
+        }
 
         validate(dto);
 
@@ -53,7 +59,6 @@ public class WorkExperienceService {
         return mapToDto(updated);
     }
 
-    // ================= GET BY APPLICANT =================
     public List<WorkExperienceDto> getByApplicant(Long applicantId) {
 
         return workExperienceRepository.findByApplicantId(applicantId)
@@ -62,7 +67,6 @@ public class WorkExperienceService {
                 .collect(Collectors.toList());
     }
 
-    // ================= DELETE =================
     public void delete(Long id) {
         workExperienceRepository.deleteById(id);
     }
@@ -70,7 +74,7 @@ public class WorkExperienceService {
     // ================= VALIDATION RULES =================
     private void validate(WorkExperienceDto dto) {
 
-        // OPTION: no experience flag logic
+        // ================= NORMAL VALIDATION =================
         if (dto.getEmployerName() == null || dto.getEmployerName().isBlank()) {
             throw new RuntimeException("Employer name is required");
         }
@@ -83,18 +87,19 @@ public class WorkExperienceService {
             throw new RuntimeException("Start date is required");
         }
 
-        // If not currently employed → end date required
-        if (Boolean.FALSE.equals(dto.getIsCurrentlyEmployed())) {
-            if (dto.getEndDate() == null) {
-                throw new RuntimeException("End date is required if not currently employed");
-            }
+        // Normalize null → false (important)
+        boolean isCurrent = Boolean.TRUE.equals(dto.getIsCurrentlyEmployed());
+
+        if (!isCurrent && dto.getEndDate() == null) {
+            throw new RuntimeException("End date is required if not currently employed");
         }
 
-        // Date logic check
-        if (dto.getEndDate() != null && dto.getStartDate() != null) {
-            if (dto.getEndDate().isBefore(dto.getStartDate())) {
-                throw new RuntimeException("End date cannot be before start date");
-            }
+        if (isCurrent && dto.getEndDate() != null) {
+            throw new RuntimeException("End date must be null if currently employed");
+        }
+
+        if (dto.getEndDate() != null && dto.getEndDate().isBefore(dto.getStartDate())) {
+            throw new RuntimeException("End date cannot be before start date");
         }
     }
 
@@ -112,10 +117,65 @@ public class WorkExperienceService {
                     work.getDocuments()
                             .stream()
                             .map(Document::getId)
-                            .collect(Collectors.toList())
-            );
+                            .collect(Collectors.toList()));
         }
 
         return dto;
     }
 }
+
+
+//   {
+//     "employerName": "Tanzania Revenue Authority",
+//     "employerAddress": "Dar es Salaam",
+//     "employerPhone": "255700000001",
+//     "employerEmail": "hr@tra.go.tz",
+//     "jobTitle": "Intern",
+//     "department": "IT",
+//     "responsibilities": "Data entry and system support",
+//     "startDate": "2023-01-01",
+//     "endDate": "2023-06-01",
+//     "isCurrentlyEmployed": false,
+//     "employmentType": "FULL_TIME",
+//     "country": "Tanzania",
+//     "region": "URBAN_WEST",
+//     "district": "MJINI",
+//     "city": "Zanzibar",
+//     "applicantId": 1
+//   }
+//   {
+//     "employerName": "NMB Bank",
+//     "employerAddress": "Samora Avenue",
+//     "employerPhone": "255700000002",
+//     "employerEmail": "hr@nmb.co.tz",
+//     "jobTitle": "Assistant",
+//     "department": "Finance",
+//     "responsibilities": "Customer support",
+//     "startDate": "2022-03-01",
+//     "endDate": "2022-12-01",
+//     "isCurrentlyEmployed": false,
+//     "employmentType": "PART_TIME",
+//     "country": "Tanzania",
+//     "region": "URBAN_WEST",
+//     "district": "KUSINI",
+//     "city": "Zanzibar",
+//     "applicantId": 2
+//   }
+//   {
+//     "employerName": "Vodacom Tanzania",
+//     "employerAddress": "Makumbusho",
+//     "employerPhone": "255700000003",
+//     "employerEmail": "hr@vodacom.co.tz",
+//     "jobTitle": "Support Agent",
+//     "department": "Customer Care",
+//     "responsibilities": "Call center support",
+//     "startDate": "2021-05-01",
+//     "endDate": "2022-05-01",
+//     "isCurrentlyEmployed": false,
+//     "employmentType": "FULL_TIME",
+//     "country": "Tanzania",
+//     "region": "URBAN_WEST",
+//     "district": "WETE",
+//     "city": "Pemba",
+//     "applicantId": 3
+//   }

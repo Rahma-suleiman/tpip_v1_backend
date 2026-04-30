@@ -1,64 +1,37 @@
-// package com.znz.tpip_backend.model;
+package com.znz.tpip_backend.model;
 
-// import jakarta.persistence.*;
-// import lombok.*;
-// import java.time.LocalDateTime;
+import jakarta.persistence.*;
+import lombok.*;
+import java.time.LocalDateTime;
 
-// import com.znz.tpip_backend.enums.PaymentMethod;
-// import com.znz.tpip_backend.enums.PaymentStatus;
+import com.znz.tpip_backend.enums.PaymentChannel;
+import com.znz.tpip_backend.enums.PaymentStatus;
 
-// @Getter
-// @Setter
-// @Entity
-// @Table(name = "payment")
-// public class Payment extends AuditModel<String> {
+@Getter
+@Setter
+@Entity
+@Table(name = "payment")
+public class Payment {
 
-//     @Id
-//     @GeneratedValue(strategy = GenerationType.IDENTITY)
-//     private Long id;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
-//     // ===== PAYMENT DETAILS =====
-//     @Column(nullable = false)
-//     private Double amount;
+    private Double amount;
+    private String currency;
 
-//     @Column(nullable = false)
-//     private String currency; // TZS, USD
+    private String referenceNumber;
+    private String transactionId;
 
-//     @Enumerated(EnumType.STRING)
-//     private PaymentStatus paymentStatus;
+    private LocalDateTime paidAt;
 
-//     @Enumerated(EnumType.STRING)
-//     private PaymentMethod paymentMethod;
+    @Enumerated(EnumType.STRING)
+    private PaymentChannel channel;
 
-//     // ===== TRANSACTION INFO =====
-//     private String transactionReference;
+    @Enumerated(EnumType.STRING)
+    private PaymentStatus status = PaymentStatus.PENDING;
 
-//     private String externalTransactionId;
-
-//     private String receiptNumber;
-
-//     // ===== PAYER DETAILS =====
-//     private String payerName;
-
-//     private String payerPhone;
-
-//     private String payerEmail;
-
-//     // ===== PAYMENT DATE =====
-//     private LocalDateTime paymentDate;
-
-//     private LocalDateTime confirmedDate;
-
-//     // ===== SYSTEM CONTROL =====
-//     private Boolean isVerified = false;
-
-//     private String verifiedBy;
-
-//     private String paymentDescription;
-
-//     // ===== RELATIONSHIP =====
-//     @ManyToOne
-//     @JoinColumn(name = "personal_info_id", nullable = false)
-//     private PersonalInfo personalInfo;
-    
-// }
+    @OneToOne
+    @JoinColumn(name = "application_id")
+    private Application application;
+}

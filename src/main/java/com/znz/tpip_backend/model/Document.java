@@ -18,15 +18,6 @@ public class Document extends AuditModel<String> {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne
-    @JoinColumn(name = "application_id", nullable = false)
-    private Application application;
-
-    //  // Optional: document can belong to education (transcript/certificate)
-    // @ManyToOne
-    // @JoinColumn(name = "education_id", nullable = false)
-    // private Education education;
-
     // Document type (ID, Certificate, Transcript)
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -39,4 +30,17 @@ public class Document extends AuditModel<String> {
 
     // Verification status
     private Boolean isVerified = false;
+
+    @ManyToOne
+    @JoinColumn(name = "application_id", nullable = false)
+    private Application application;
+
+    // // Optional: document can belong to education (transcript/certificate)
+    @ManyToOne
+    @JoinColumn(name = "education_id", nullable = false)
+    private Education education;
+
+    @ManyToOne
+    @JoinColumn(name = "work_experience_id")
+    private WorkExperience workExperience; // optional
 }
