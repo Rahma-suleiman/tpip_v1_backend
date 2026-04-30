@@ -1,7 +1,6 @@
 package com.znz.tpip_backend.service;
 
 import com.znz.tpip_backend.dto.*;
-import com.znz.tpip_backend.enums.EducationLevel;
 import com.znz.tpip_backend.model.*;
 import com.znz.tpip_backend.repository.*;
 
@@ -20,6 +19,8 @@ public class EducationService {
 
     private final EducationRepository educationRepository;
     private final ApplicantRepository applicantRepository;
+    private final ApplicationRepository applicationRepository;
+    private final ApplicationWorkflowService workflowService;
     private final ModelMapper modelMapper;
 
     // ================= CREATE =================
@@ -31,16 +32,17 @@ public class EducationService {
                 .orElseThrow(() -> new RuntimeException("Applicant not found"));
 
         Education education = new Education();
-
         modelMapper.map(dto, education);
-
         education.setApplicant(applicant);
 
         education.setSubjects(new ArrayList<>());
-
         mapSubjects(dto, education);
 
         Education saved = educationRepository.save(education);
+
+        // ================= AUTO STEP ADVANCE =================
+        Application app = getApplication(applicant.getId());
+        workflowService.evaluateAndAdvance(app.getId());
 
         return mapToDto(saved);
     }
@@ -55,12 +57,16 @@ public class EducationService {
 
         modelMapper.map(dto, education);
 
-        // reset subjects
         education.getSubjects().clear();
-
         mapSubjects(dto, education);
 
-        return mapToDto(educationRepository.save(education));
+        Education saved = educationRepository.save(education);
+
+        // ================= AUTO STEP ADVANCE =================
+        Application app = getApplication(education.getApplicant().getId());
+        workflowService.evaluateAndAdvance(app.getId());
+
+        return mapToDto(saved);
     }
 
     // ================= GET =================
@@ -74,7 +80,24 @@ public class EducationService {
 
     // ================= DELETE =================
     public void delete(Long id) {
+
+        Education education = educationRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Education not found"));
+
+        Long applicantId = education.getApplicant().getId();
+
         educationRepository.deleteById(id);
+
+        // OPTIONAL: re-evaluate step after delete
+        Application app = getApplication(applicantId);
+        workflowService.evaluateAndAdvance(app.getId());
+    }
+
+    // ================= APPLICATION FETCH =================
+    private Application getApplication(Long applicantId) {
+        return applicationRepository
+                .findByApplicantId(applicantId)
+                .orElseThrow(() -> new RuntimeException("Application not found"));
     }
 
     // ================= VALIDATION =================
@@ -104,7 +127,6 @@ public class EducationService {
                 if (!isBlank(dto.getGpa()) || !isBlank(dto.getClassification())) {
                     throw new RuntimeException(dto.getLevel() + " should not have GPA or classification");
                 }
-
                 break;
 
             case DIPLOMA:
@@ -123,15 +145,12 @@ public class EducationService {
                 if (dto.getSubjects() != null && !dto.getSubjects().isEmpty()) {
                     throw new RuntimeException(dto.getLevel() + " should not have subjects");
                 }
-
                 break;
 
             case OTHER:
-                // flexible
                 break;
         }
 
-        // SUBJECT VALIDATION
         if (dto.getSubjects() != null) {
             for (EducationSubjectDto s : dto.getSubjects()) {
 
@@ -147,18 +166,16 @@ public class EducationService {
     }
 
     private boolean isBlank(String value) {
-        return value == null || value.trim().isEmpty(); //After removing spaces(.trim()), is the string empty
+        return value == null || value.trim().isEmpty();
     }
 
-    // ================= SUBJECT MAPPER =================
+    // ================= SUBJECT MAPPING =================
     private void mapSubjects(EducationDto dto, Education education) {
 
-        // ensure list exists
         if (education.getSubjects() == null) {
             education.setSubjects(new ArrayList<>());
         }
 
-        // clear existing (important for orphanRemoval)
         education.getSubjects().clear();
 
         if (dto.getSubjects() != null) {
@@ -170,11 +187,12 @@ public class EducationService {
                 subject.setGrade(s.getGrade());
                 subject.setEducation(education);
 
-                education.getSubjects().add(subject); // ✅ ADD, NOT SET
+                education.getSubjects().add(subject);
             }
         }
     }
 
+    // ================= MAPPING =================
     private EducationDto mapToDto(Education education) {
 
         EducationDto dto = modelMapper.map(education, EducationDto.class);
@@ -205,38 +223,38 @@ public class EducationService {
 }
 
 // {
-//   "level": "O_LEVEL",
-//   "institutionName": "Jangwani Secondary School",
-//   "completionYear": 2020,
-//   "description": "O-Level Certificate",
-//   "applicantId": 1,
-//   "subjects": [
-//     { "subjectName": "Mathematics", "grade": "A" },
-//     { "subjectName": "Physics", "grade": "B" },
-//     { "subjectName": "Chemistry", "grade": "A" }
-//   ]
+// "level": "O_LEVEL",
+// "institutionName": "Jangwani Secondary School",
+// "completionYear": 2020,
+// "description": "O-Level Certificate",
+// "applicantId": 1,
+// "subjects": [
+// { "subjectName": "Mathematics", "grade": "A" },
+// { "subjectName": "Physics", "grade": "B" },
+// { "subjectName": "Chemistry", "grade": "A" }
+// ]
 // }
 // {
-//   "level": "A_LEVEL",
-//   "institutionName": "Ilala High School",
-//   "programmeName": "PCM",
-//   "completionYear": 2022,
-//   "description": "Advanced Certificate of Secondary Education",
-//   "applicantId": 2,
-//   "subjects": [
-//     { "subjectName": "Physics", "grade": "B+" },
-//     { "subjectName": "Mathematics", "grade": "A" },
-//     { "subjectName": "Chemistry", "grade": "A" }
-//   ]
+// "level": "A_LEVEL",
+// "institutionName": "Ilala High School",
+// "programmeName": "PCM",
+// "completionYear": 2022,
+// "description": "Advanced Certificate of Secondary Education",
+// "applicantId": 2,
+// "subjects": [
+// { "subjectName": "Physics", "grade": "B+" },
+// { "subjectName": "Mathematics", "grade": "A" },
+// { "subjectName": "Chemistry", "grade": "A" }
+// ]
 // }
 // {
-//   "level": "DIPLOMA",
-//   "institutionName": "Dar es Salaam Institute of Technology",
-//   "programmeName": "Information Technology",
-//   "completionYear": 2023,
-//   "gpa": "3.8",
-//   "classification": "FIRST",
-//   "description": "Diploma in IT",
-//   "applicantId": 3,
-//   "subjects": []
+// "level": "DIPLOMA",
+// "institutionName": "Dar es Salaam Institute of Technology",
+// "programmeName": "Information Technology",
+// "completionYear": 2023,
+// "gpa": "3.8",
+// "classification": "FIRST",
+// "description": "Diploma in IT",
+// "applicantId": 3,
+// "subjects": []
 // }

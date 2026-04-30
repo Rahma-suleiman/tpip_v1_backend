@@ -1,6 +1,8 @@
 package com.znz.tpip_backend.service;
 
 import com.znz.tpip_backend.dto.WorkExperienceDto;
+// import com.znz.tpip_backend.enums.ApplicationStep;
+
 import com.znz.tpip_backend.model.*;
 import com.znz.tpip_backend.repository.*;
 
@@ -17,6 +19,8 @@ public class WorkExperienceService {
 
     private final WorkExperienceRepository workExperienceRepository;
     private final ApplicantRepository applicantRepository;
+    private final ApplicationRepository applicationRepository;
+    private final ApplicationWorkflowService workflowService;
     private final ModelMapper modelMapper;
 
     public WorkExperienceDto create(WorkExperienceDto dto) {
@@ -28,13 +32,16 @@ public class WorkExperienceService {
             throw new RuntimeException("Applicant marked as having NO work experience. Cannot add records.");
         }
 
-        // VALIDATE ONLY IF EXPERIENCE EXISTS
         validate(dto);
 
         WorkExperience work = modelMapper.map(dto, WorkExperience.class);
         work.setApplicant(applicant);
 
         WorkExperience saved = workExperienceRepository.save(work);
+
+        // ================= AUTO STEP TRIGGER =================
+        Application app = getApplication(applicant.getId());
+        workflowService.evaluateAndAdvance(app.getId());
 
         return mapToDto(saved);
     }
@@ -56,6 +63,10 @@ public class WorkExperienceService {
 
         WorkExperience updated = workExperienceRepository.save(work);
 
+        // ================= OPTIONAL AUTO STEP =================
+        Application app = getApplication(applicant.getId());
+        workflowService.evaluateAndAdvance(app.getId());
+
         return mapToDto(updated);
     }
 
@@ -71,10 +82,16 @@ public class WorkExperienceService {
         workExperienceRepository.deleteById(id);
     }
 
-    // ================= VALIDATION RULES =================
+    // ================= HELPERS =================
+
+    private Application getApplication(Long applicantId) {
+        return applicationRepository
+                .findByApplicantId(applicantId)
+                .orElseThrow(() -> new RuntimeException("Application not found"));
+    }
+
     private void validate(WorkExperienceDto dto) {
 
-        // ================= NORMAL VALIDATION =================
         if (dto.getEmployerName() == null || dto.getEmployerName().isBlank()) {
             throw new RuntimeException("Employer name is required");
         }
@@ -87,7 +104,6 @@ public class WorkExperienceService {
             throw new RuntimeException("Start date is required");
         }
 
-        // Normalize null → false (important)
         boolean isCurrent = Boolean.TRUE.equals(dto.getIsCurrentlyEmployed());
 
         if (!isCurrent && dto.getEndDate() == null) {
@@ -103,15 +119,11 @@ public class WorkExperienceService {
         }
     }
 
-    // ================= MAPPING =================
     private WorkExperienceDto mapToDto(WorkExperience work) {
 
         WorkExperienceDto dto = modelMapper.map(work, WorkExperienceDto.class);
-
-        // fk mapping
         dto.setApplicantId(work.getApplicant().getId());
 
-        // reserve
         if (work.getDocuments() != null) {
             dto.setDocumentIds(
                     work.getDocuments()
@@ -124,58 +136,57 @@ public class WorkExperienceService {
     }
 }
 
-
-//   {
-//     "employerName": "Tanzania Revenue Authority",
-//     "employerAddress": "Dar es Salaam",
-//     "employerPhone": "255700000001",
-//     "employerEmail": "hr@tra.go.tz",
-//     "jobTitle": "Intern",
-//     "department": "IT",
-//     "responsibilities": "Data entry and system support",
-//     "startDate": "2023-01-01",
-//     "endDate": "2023-06-01",
-//     "isCurrentlyEmployed": false,
-//     "employmentType": "FULL_TIME",
-//     "country": "Tanzania",
-//     "region": "URBAN_WEST",
-//     "district": "MJINI",
-//     "city": "Zanzibar",
-//     "applicantId": 1
-//   }
-//   {
-//     "employerName": "NMB Bank",
-//     "employerAddress": "Samora Avenue",
-//     "employerPhone": "255700000002",
-//     "employerEmail": "hr@nmb.co.tz",
-//     "jobTitle": "Assistant",
-//     "department": "Finance",
-//     "responsibilities": "Customer support",
-//     "startDate": "2022-03-01",
-//     "endDate": "2022-12-01",
-//     "isCurrentlyEmployed": false,
-//     "employmentType": "PART_TIME",
-//     "country": "Tanzania",
-//     "region": "URBAN_WEST",
-//     "district": "KUSINI",
-//     "city": "Zanzibar",
-//     "applicantId": 2
-//   }
-//   {
-//     "employerName": "Vodacom Tanzania",
-//     "employerAddress": "Makumbusho",
-//     "employerPhone": "255700000003",
-//     "employerEmail": "hr@vodacom.co.tz",
-//     "jobTitle": "Support Agent",
-//     "department": "Customer Care",
-//     "responsibilities": "Call center support",
-//     "startDate": "2021-05-01",
-//     "endDate": "2022-05-01",
-//     "isCurrentlyEmployed": false,
-//     "employmentType": "FULL_TIME",
-//     "country": "Tanzania",
-//     "region": "URBAN_WEST",
-//     "district": "WETE",
-//     "city": "Pemba",
-//     "applicantId": 3
-//   }
+// {
+// "employerName": "Tanzania Revenue Authority",
+// "employerAddress": "Dar es Salaam",
+// "employerPhone": "255700000001",
+// "employerEmail": "hr@tra.go.tz",
+// "jobTitle": "Intern",
+// "department": "IT",
+// "responsibilities": "Data entry and system support",
+// "startDate": "2023-01-01",
+// "endDate": "2023-06-01",
+// "isCurrentlyEmployed": false,
+// "employmentType": "FULL_TIME",
+// "country": "Tanzania",
+// "region": "URBAN_WEST",
+// "district": "MJINI",
+// "city": "Zanzibar",
+// "applicantId": 1
+// }
+// {
+// "employerName": "NMB Bank",
+// "employerAddress": "Samora Avenue",
+// "employerPhone": "255700000002",
+// "employerEmail": "hr@nmb.co.tz",
+// "jobTitle": "Assistant",
+// "department": "Finance",
+// "responsibilities": "Customer support",
+// "startDate": "2022-03-01",
+// "endDate": "2022-12-01",
+// "isCurrentlyEmployed": false,
+// "employmentType": "PART_TIME",
+// "country": "Tanzania",
+// "region": "URBAN_WEST",
+// "district": "KUSINI",
+// "city": "Zanzibar",
+// "applicantId": 2
+// }
+// {
+// "employerName": "Vodacom Tanzania",
+// "employerAddress": "Makumbusho",
+// "employerPhone": "255700000003",
+// "employerEmail": "hr@vodacom.co.tz",
+// "jobTitle": "Support Agent",
+// "department": "Customer Care",
+// "responsibilities": "Call center support",
+// "startDate": "2021-05-01",
+// "endDate": "2022-05-01",
+// "isCurrentlyEmployed": false,
+// "employmentType": "FULL_TIME",
+// "country": "Tanzania",
+// "region": "URBAN_WEST",
+// "district": "WETE",
+// "city": "Pemba",
+// "applicantId": 3
+// }
