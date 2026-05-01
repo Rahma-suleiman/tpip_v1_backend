@@ -1,6 +1,7 @@
 package com.znz.tpip_backend.service;
 
 import com.znz.tpip_backend.dto.*;
+import com.znz.tpip_backend.enums.ApplicationStep;
 import com.znz.tpip_backend.model.*;
 import com.znz.tpip_backend.repository.*;
 
@@ -20,7 +21,8 @@ public class EducationService {
     private final EducationRepository educationRepository;
     private final ApplicantRepository applicantRepository;
     private final ApplicationRepository applicationRepository;
-    private final ApplicationWorkflowService workflowService;
+    // private final ApplicationWorkflowService workflowService;
+    private final ApplicationEventPublisherService eventPublisher;
     private final ModelMapper modelMapper;
 
     // ================= CREATE =================
@@ -31,18 +33,17 @@ public class EducationService {
         Applicant applicant = applicantRepository.findById(dto.getApplicantId())
                 .orElseThrow(() -> new RuntimeException("Applicant not found"));
 
-        Education education = new Education();
-        modelMapper.map(dto, education);
+        Education education = modelMapper.map(dto, Education.class);
         education.setApplicant(applicant);
 
-        education.setSubjects(new ArrayList<>());
         mapSubjects(dto, education);
 
         Education saved = educationRepository.save(education);
 
-        // ================= AUTO STEP ADVANCE =================
         Application app = getApplication(applicant.getId());
-        workflowService.evaluateAndAdvance(app.getId());
+
+        // ✅ EVENT
+        eventPublisher.publish(app.getId(), applicant.getId(), ApplicationStep.EDUCATION);
 
         return mapToDto(saved);
     }
@@ -53,18 +54,18 @@ public class EducationService {
         validateEducation(dto);
 
         Education education = educationRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Education not found"));
+                .orElseThrow(() -> new RuntimeException("Not found"));
 
         modelMapper.map(dto, education);
 
-        education.getSubjects().clear();
         mapSubjects(dto, education);
 
         Education saved = educationRepository.save(education);
 
-        // ================= AUTO STEP ADVANCE =================
         Application app = getApplication(education.getApplicant().getId());
-        workflowService.evaluateAndAdvance(app.getId());
+
+        // ✅ EVENT
+        eventPublisher.publish(app.getId(), education.getApplicant().getId(), ApplicationStep.EDUCATION);
 
         return mapToDto(saved);
     }
@@ -81,16 +82,17 @@ public class EducationService {
     // ================= DELETE =================
     public void delete(Long id) {
 
-        Education education = educationRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Education not found"));
+        Education edu = educationRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Not found"));
 
-        Long applicantId = education.getApplicant().getId();
+        Long applicantId = edu.getApplicant().getId();
 
         educationRepository.deleteById(id);
 
-        // OPTIONAL: re-evaluate step after delete
         Application app = getApplication(applicantId);
-        workflowService.evaluateAndAdvance(app.getId());
+
+        // ✅ EVENT (important)
+        eventPublisher.publish(app.getId(), applicantId, ApplicationStep.EDUCATION);
     }
 
     // ================= APPLICATION FETCH =================
@@ -223,38 +225,45 @@ public class EducationService {
 }
 
 // {
-// "level": "O_LEVEL",
-// "institutionName": "Jangwani Secondary School",
-// "completionYear": 2020,
-// "description": "O-Level Certificate",
-// "applicantId": 1,
-// "subjects": [
-// { "subjectName": "Mathematics", "grade": "A" },
-// { "subjectName": "Physics", "grade": "B" },
-// { "subjectName": "Chemistry", "grade": "A" }
-// ]
+//   "level": "O_LEVEL",
+//   "institutionName": "Lumumba Secondary School",
+//   "programmeName": null,
+//   "completionYear": 2018,
+//   "gpa": null,
+//   "classification": null,
+//   "description": "Form IV Certificate - Zanzibar O-Level Education",
+//   "applicantId": 1,
+//   "subjects": [
+//     { "subjectName": "Mathematics", "grade": "A" },
+//     { "subjectName": "English", "grade": "B" },
+//     { "subjectName": "Biology", "grade": "A" },
+//     { "subjectName": "Civics", "grade": "B+" }
+//   ]
+// }
+
+// {
+//   "level": "A_LEVEL",
+//   "institutionName": "Forodhani Secondary School",
+//   "programmeName": "PCM",
+//   "completionYear": 2020,
+//   "gpa": null,
+//   "classification": null,
+//   "description": "Advanced Certificate of Secondary Education (ACSEE)",
+//   "applicantId": 2,
+//   "subjects": [
+//     { "subjectName": "Physics", "grade": "A" },
+//     { "subjectName": "Mathematics", "grade": "A" },
+//     { "subjectName": "Chemistry", "grade": "B+" }
+//   ]
 // }
 // {
-// "level": "A_LEVEL",
-// "institutionName": "Ilala High School",
-// "programmeName": "PCM",
-// "completionYear": 2022,
-// "description": "Advanced Certificate of Secondary Education",
-// "applicantId": 2,
-// "subjects": [
-// { "subjectName": "Physics", "grade": "B+" },
-// { "subjectName": "Mathematics", "grade": "A" },
-// { "subjectName": "Chemistry", "grade": "A" }
-// ]
-// }
-// {
-// "level": "DIPLOMA",
-// "institutionName": "Dar es Salaam Institute of Technology",
-// "programmeName": "Information Technology",
-// "completionYear": 2023,
-// "gpa": "3.8",
-// "classification": "FIRST",
-// "description": "Diploma in IT",
-// "applicantId": 3,
-// "subjects": []
+//   "level": "DIPLOMA",
+//   "institutionName": "State University of Zanzibar (SUZA)",
+//   "programmeName": "Information Technology",
+//   "completionYear": 2023,
+//   "gpa": "3.9",
+//   "classification": "FIRST",
+//   "description": "Diploma in Information Technology - Software and Systems Track",
+//   "applicantId": 3,
+//   "subjects": []
 // }

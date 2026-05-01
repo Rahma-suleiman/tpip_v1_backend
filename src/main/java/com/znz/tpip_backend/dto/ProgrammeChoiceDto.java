@@ -11,9 +11,14 @@ public class ProgrammeChoiceDto {
     private Long id;
 
     private Integer preferenceRank;
+
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private Integer matchScore;
 
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private Boolean isEligible;
+
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private String eligibilityRemark;
 
     // fk

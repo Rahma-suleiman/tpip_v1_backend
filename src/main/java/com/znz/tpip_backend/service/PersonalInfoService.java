@@ -1,6 +1,7 @@
 package com.znz.tpip_backend.service;
 
 import com.znz.tpip_backend.dto.PersonalInfoDto;
+import com.znz.tpip_backend.enums.ApplicationStep;
 import com.znz.tpip_backend.model.*;
 import com.znz.tpip_backend.repository.ApplicantRepository;
 import com.znz.tpip_backend.repository.ApplicationRepository;
@@ -18,66 +19,56 @@ public class PersonalInfoService {
     private final PersonalInfoRepository personalInfoRepository;
     private final ApplicantRepository applicantRepository;
     private final ApplicationRepository applicationRepository;
-    private final ApplicationWorkflowService workflowService;
+    private final ApplicationEventPublisherService eventPublisher;
     private final ModelMapper modelMapper;
 
     // ================= CREATE / UPDATE =================
-   public PersonalInfoDto save(Long applicantId, PersonalInfoDto dto) {
+    public PersonalInfoDto save(Long applicantId, PersonalInfoDto dto) {
 
-    Applicant applicant = applicantRepository.findById(applicantId)
-            .orElseThrow(() -> new RuntimeException("Applicant not found"));
+        Applicant applicant = applicantRepository.findById(applicantId)
+                .orElseThrow(() -> new RuntimeException("Applicant not found"));
 
-    PersonalInfo info = personalInfoRepository
-            .findByApplicantId(applicantId)
-            .orElse(new PersonalInfo());
-
-    // ================= MAP =================
-    modelMapper.map(dto, info);
-    info.setApplicant(applicant);
-
-    // ================= NEXT OF KIN =================
-    if (dto.getNextOfKinName() != null) {
-
-        NextOfKin nok = info.getNextOfKin() != null
-                ? info.getNextOfKin()
-                : new NextOfKin();
-
-        nok.setKinFullName(dto.getNextOfKinName());
-        nok.setKinRelationship(dto.getNextOfKinRelationship());
-        nok.setKinPhoneNumber(dto.getNextOfKinPhone());
-
-        info.setNextOfKin(nok);
-    }
-
-    // ================= DISABILITY =================
-    if (dto.getHasDisability() != null) {
-
-        Disability disability = info.getDisability() != null
-                ? info.getDisability()
-                : new Disability();
-
-        disability.setHasDisability(dto.getHasDisability());
-        disability.setDisabilityType(dto.getDisabilityType());
-        disability.setDisabilityNeeds(dto.getDisabilityNeeds());
-
-        info.setDisability(disability);
-    }
-
-    // ================= SAVE PERSONAL INFO =================
-    PersonalInfo saved = personalInfoRepository.save(info);
-
-    // ================= AUTO STEP TRACKING =================
-    Application app = getApplication(applicantId);
-
-    workflowService.evaluateAndAdvance(app.getId());
-
-    return mapToDto(saved);
-}
-    private Application getApplication(Long applicantId) {
-        return applicationRepository
+        PersonalInfo info = personalInfoRepository
                 .findByApplicantId(applicantId)
+                .orElse(new PersonalInfo());
+
+        modelMapper.map(dto, info);
+        info.setApplicant(applicant);
+
+        // NEXT OF KIN
+        if (dto.getNextOfKinName() != null) {
+            NextOfKin nok = info.getNextOfKin() != null ? info.getNextOfKin() : new NextOfKin();
+            nok.setKinFullName(dto.getNextOfKinName());
+            nok.setKinRelationship(dto.getNextOfKinRelationship());
+            nok.setKinPhoneNumber(dto.getNextOfKinPhone());
+            info.setNextOfKin(nok);
+        }
+
+        // DISABILITY
+        if (dto.getHasDisability() != null) {
+            Disability d = info.getDisability() != null ? info.getDisability() : new Disability();
+            d.setHasDisability(dto.getHasDisability());
+            d.setDisabilityType(dto.getDisabilityType());
+            d.setDisabilityNeeds(dto.getDisabilityNeeds());
+            info.setDisability(d);
+        }
+
+        PersonalInfo saved = personalInfoRepository.save(info);
+
+        Application app = getApplication(applicantId);
+
+        // ✅ EVENT
+        eventPublisher.publish(app.getId(), applicantId, ApplicationStep.PERSONAL_INFO);
+
+        return mapToDto(saved);
+    }
+
+
+    private Application getApplication(Long applicantId) {
+        return applicationRepository.findByApplicantId(applicantId)
                 .orElseThrow(() -> new RuntimeException("Application not found"));
     }
+
     // ================= GET =================
     public PersonalInfoDto getByApplicant(Long applicantId) {
 

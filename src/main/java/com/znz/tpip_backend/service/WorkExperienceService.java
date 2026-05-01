@@ -2,7 +2,7 @@ package com.znz.tpip_backend.service;
 
 import com.znz.tpip_backend.dto.WorkExperienceDto;
 // import com.znz.tpip_backend.enums.ApplicationStep;
-
+import com.znz.tpip_backend.enums.ApplicationStep;
 import com.znz.tpip_backend.model.*;
 import com.znz.tpip_backend.repository.*;
 
@@ -20,17 +20,13 @@ public class WorkExperienceService {
     private final WorkExperienceRepository workExperienceRepository;
     private final ApplicantRepository applicantRepository;
     private final ApplicationRepository applicationRepository;
-    private final ApplicationWorkflowService workflowService;
+    private final ApplicationEventPublisherService eventPublisher;
     private final ModelMapper modelMapper;
 
     public WorkExperienceDto create(WorkExperienceDto dto) {
 
         Applicant applicant = applicantRepository.findById(dto.getApplicantId())
                 .orElseThrow(() -> new RuntimeException("Applicant not found"));
-
-        if (Boolean.FALSE.equals(applicant.getHasWorkExperience())) {
-            throw new RuntimeException("Applicant marked as having NO work experience. Cannot add records.");
-        }
 
         validate(dto);
 
@@ -39,9 +35,10 @@ public class WorkExperienceService {
 
         WorkExperience saved = workExperienceRepository.save(work);
 
-        // ================= AUTO STEP TRIGGER =================
         Application app = getApplication(applicant.getId());
-        workflowService.evaluateAndAdvance(app.getId());
+
+        // ✅ EVENT
+        eventPublisher.publish(app.getId(), applicant.getId(), ApplicationStep.WORK_EXPERIENCE);
 
         return mapToDto(saved);
     }
@@ -49,25 +46,20 @@ public class WorkExperienceService {
     public WorkExperienceDto update(Long id, WorkExperienceDto dto) {
 
         WorkExperience work = workExperienceRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Work experience not found"));
-
-        Applicant applicant = work.getApplicant();
-
-        if (Boolean.FALSE.equals(applicant.getHasWorkExperience())) {
-            throw new RuntimeException("Applicant has no work experience. Update not allowed.");
-        }
+                .orElseThrow(() -> new RuntimeException("Not found"));
 
         validate(dto);
 
         modelMapper.map(dto, work);
 
-        WorkExperience updated = workExperienceRepository.save(work);
+        WorkExperience saved = workExperienceRepository.save(work);
 
-        // ================= OPTIONAL AUTO STEP =================
-        Application app = getApplication(applicant.getId());
-        workflowService.evaluateAndAdvance(app.getId());
+        Application app = getApplication(work.getApplicant().getId());
 
-        return mapToDto(updated);
+        // ✅ EVENT
+        eventPublisher.publish(app.getId(), work.getApplicant().getId(), ApplicationStep.WORK_EXPERIENCE);
+
+        return mapToDto(saved);
     }
 
     public List<WorkExperienceDto> getByApplicant(Long applicantId) {
@@ -79,7 +71,18 @@ public class WorkExperienceService {
     }
 
     public void delete(Long id) {
+
+        WorkExperience work = workExperienceRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Not found"));
+
+        Long applicantId = work.getApplicant().getId();
+
         workExperienceRepository.deleteById(id);
+
+        Application app = getApplication(applicantId);
+
+        // ✅ EVENT
+        eventPublisher.publish(app.getId(), applicantId, ApplicationStep.WORK_EXPERIENCE);
     }
 
     // ================= HELPERS =================

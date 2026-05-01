@@ -1,6 +1,7 @@
 package com.znz.tpip_backend.service;
 
 import com.znz.tpip_backend.dto.ProgrammeChoiceDto;
+import com.znz.tpip_backend.enums.ApplicationStep;
 import com.znz.tpip_backend.enums.EducationLevel;
 import com.znz.tpip_backend.model.*;
 import com.znz.tpip_backend.repository.*;
@@ -22,10 +23,41 @@ public class ProgrammeChoiceService {
         private final ApplicationRepository applicationRepository;
         private final ProgrammeRepository programmeRepository;
         private final EducationRepository educationRepository;
-        private final ApplicationWorkflowService workflowService;
+        private final ApplicationEventPublisherService eventPublisher;
         private final ModelMapper modelMapper;
 
         // ================= CREATE =================
+        // public ProgrammeChoiceDto create(ProgrammeChoiceDto dto) {
+
+        // Application app = applicationRepository.findById(dto.getApplicationId())
+        // .orElseThrow(() -> new RuntimeException("Application not found"));
+
+        // Programme programme = programmeRepository.findById(dto.getProgrammeId())
+        // .orElseThrow(() -> new RuntimeException("Programme not found"));
+
+        // List<ProgrammeChoice> existing =
+        // programmeChoiceRepository.findByApplicationId(app.getId());
+
+        // ProgrammeChoiceValidator.validateCreate(
+        // existing,
+        // dto.getPreferenceRank(),
+        // dto.getProgrammeId());
+
+        // ProgrammeChoice choice = new ProgrammeChoice();
+        // choice.setApplication(app);
+        // choice.setProgramme(programme);
+        // choice.setPreferenceRank(dto.getPreferenceRank());
+
+        // applyEligibility(choice, app.getApplicant(), programme);
+        // ProgrammeChoice saved = programmeChoiceRepository.save(choice);
+
+        // // ✅ EVENT
+        // eventPublisher.publish(app.getId(), app.getApplicant().getId(),
+        // ApplicationStep.PROGRAMME_CHOICE);
+
+        // return map(saved);
+
+        // }
         public ProgrammeChoiceDto create(ProgrammeChoiceDto dto) {
 
                 Application app = applicationRepository.findById(dto.getApplicationId())
@@ -46,16 +78,54 @@ public class ProgrammeChoiceService {
                 choice.setProgramme(programme);
                 choice.setPreferenceRank(dto.getPreferenceRank());
 
+                // 🔥 SYSTEM ALWAYS COMPUTES THESE
                 applyEligibility(choice, app.getApplicant(), programme);
+
                 ProgrammeChoice saved = programmeChoiceRepository.save(choice);
 
-                // AUTO STEP ADVANCE
-                workflowService.evaluateAndAdvance(app.getId());
+                eventPublisher.publish(
+                                app.getId(),
+                                app.getApplicant().getId(),
+                                ApplicationStep.PROGRAMME_CHOICE);
 
                 return map(saved);
         }
 
         // ================= UPDATE =================
+        // public ProgrammeChoiceDto update(Long id, ProgrammeChoiceDto dto) {
+
+        // ProgrammeChoice choice = programmeChoiceRepository.findById(id)
+        // .orElseThrow(() -> new RuntimeException("Not found"));
+
+        // Programme programme = programmeRepository.findById(dto.getProgrammeId())
+        // .orElseThrow(() -> new RuntimeException("Programme not found"));
+
+        // List<ProgrammeChoice> existing = programmeChoiceRepository
+        // .findByApplicationId(choice.getApplication().getId());
+
+        // ProgrammeChoiceValidator.validateUpdate(
+        // existing,
+        // dto.getPreferenceRank(),
+        // dto.getProgrammeId(),
+        // id);
+
+        // choice.setProgramme(programme);
+        // choice.setPreferenceRank(dto.getPreferenceRank());
+
+        // applyEligibility(choice, choice.getApplication().getApplicant(), programme);
+
+        // ProgrammeChoice saved = programmeChoiceRepository.save(choice);
+
+        // Application app = choice.getApplication();
+
+        // // ✅ EVENT
+        // eventPublisher.publish(app.getId(), app.getApplicant().getId(),
+        // ApplicationStep.PROGRAMME_CHOICE);
+
+        // return map(saved);
+        // // return map(programmeChoiceRepository.save(choice));
+        // }
+
         public ProgrammeChoiceDto update(Long id, ProgrammeChoiceDto dto) {
 
                 ProgrammeChoice choice = programmeChoiceRepository.findById(id)
@@ -76,9 +146,19 @@ public class ProgrammeChoiceService {
                 choice.setProgramme(programme);
                 choice.setPreferenceRank(dto.getPreferenceRank());
 
-                applyEligibility(choice, choice.getApplication().getApplicant(), programme);
+                // 🔥 ALWAYS RECALCULATE
+                applyEligibility(choice,
+                                choice.getApplication().getApplicant(),
+                                programme);
 
-                return map(programmeChoiceRepository.save(choice));
+                ProgrammeChoice saved = programmeChoiceRepository.save(choice);
+
+                eventPublisher.publish(
+                                choice.getApplication().getId(),
+                                choice.getApplication().getApplicant().getId(),
+                                ApplicationStep.PROGRAMME_CHOICE);
+
+                return map(saved);
         }
 
         // ================= GET =================
@@ -90,8 +170,21 @@ public class ProgrammeChoiceService {
         }
 
         // ================= DELETE =================
+        // public void delete(Long id) {
+        // programmeChoiceRepository.deleteById(id);
+        // }
+
         public void delete(Long id) {
+
+                ProgrammeChoice choice = programmeChoiceRepository.findById(id)
+                                .orElseThrow(() -> new RuntimeException("Not found"));
+
+                Application app = choice.getApplication();
+
                 programmeChoiceRepository.deleteById(id);
+
+                // ✅ EVENT
+                eventPublisher.publish(app.getId(), app.getApplicant().getId(), ApplicationStep.PROGRAMME_CHOICE);
         }
 
         // ================= ELIGIBILITY =================

@@ -1,6 +1,6 @@
 package com.znz.tpip_backend.service;
 
-import org.aspectj.lang.annotation.Before;
+// import org.aspectj.lang.annotation.Before;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 
@@ -49,3 +49,23 @@ public class IntakeService {
         return modelMapper.map(intake, IntakeDTO.class);
     }
 }
+// now since all post are not active go to this endpoint 
+// 'PUT' /api/intakes/activate/{id} to activate the current year intake
+// {
+//   "name": "2026/2027",
+//   "startDate": "2026-10-01T08:00:00Z",
+//   "endDate": "2027-06-30T17:00:00Z",
+//   "active": false
+// }
+// {
+//   "name": "2025/2026",
+//   "startDate": "2025-10-01T08:00:00Z",
+//   "endDate": "2026-06-30T17:00:00Z",
+//   "active": false
+// }
+// {
+//   "name": "2024/2025",
+//   "startDate": "2024-10-01T08:00:00Z",
+//   "endDate": "2025-06-30T17:00:00Z",
+//   "active": false
+// }

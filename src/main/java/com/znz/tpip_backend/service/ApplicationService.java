@@ -4,6 +4,8 @@ import java.time.LocalDateTime;
 
 import org.springframework.stereotype.Service;
 
+import com.znz.tpip_backend.dto.ApplicationProgressDto;
+// import com.znz.tpip_backend.controller.ApplicationProgressDto;
 import com.znz.tpip_backend.enums.ApplicationStatus;
 import com.znz.tpip_backend.enums.ApplicationStep;
 import com.znz.tpip_backend.enums.PaymentStatus;
@@ -75,7 +77,6 @@ public class ApplicationService {
 
         return applicationRepository.save(app);
     }
-
 
     // ================= SUBMIT =================
     public Application submitApplication(Long applicationId) {
@@ -318,6 +319,32 @@ public class ApplicationService {
         // TEMP disabled modules
         // validateReferees(app);
         // validatePayment(app);
+    }
+
+    public ApplicationProgressDto getCurrentStep(Long applicationId) {
+
+        Application app = applicationRepository.findById(applicationId)
+                .orElseThrow(() -> new RuntimeException("Application not found"));
+
+        ApplicationProgressDto dto = new ApplicationProgressDto();
+
+        dto.setApplicationId(app.getId());
+        dto.setApplicantId(app.getApplicant().getId());
+        dto.setCurrentStep(app.getCurrentStep());
+        dto.setStatus(app.getStatus());
+        dto.setLocked(app.isLocked());
+
+        // OPTIONAL ENHANCEMENTS FOR UI
+        int totalSteps = com.znz.tpip_backend.enums.ApplicationStep.values().length;
+        int currentOrder = app.getCurrentStep().getOrder();
+
+        int progress = (int) ((currentOrder * 100.0) / totalSteps);
+        dto.setProgressPercentage(progress);
+
+        dto.setCurrentStepLabel(
+                app.getCurrentStep().name().replace("_", " "));
+
+        return dto;
     }
 
 }
