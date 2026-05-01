@@ -93,7 +93,7 @@ public class ApplicationService {
 
         // validateSubmissionReadiness(app);
         // Temp
-        validateSubmissionCore(app);
+        validateSubmissionReadiness(app);
 
         app.setStatus(ApplicationStatus.SUBMITTED);
         app.setSubmittedAt(LocalDateTime.now());
@@ -184,13 +184,13 @@ public class ApplicationService {
 
             case PROGRAMME_CHOICE -> validateProgrammeChoice(app);
 
-            // below 2 line is commented TEMP
-            // case REFEREES -> validateReferees(app);
-            // case PAYMENT -> validatePayment(app);
+            case REFEREES -> validateReferees(app);
+
+            case PAYMENT -> validatePayment(app);
 
             // case SUBMISSION -> validateSubmissionReadiness(app);
             // Temporary
-            case SUBMISSION -> validateSubmissionCore(app);
+            case SUBMISSION -> validateSubmissionReadiness(app);
         }
     }
 
@@ -305,21 +305,22 @@ public class ApplicationService {
 
         validatePersonalInfo(app);
         validateEducation(app);
+        validateWorkExperience(app);
         validateProgrammeChoice(app);
         validateReferees(app);
         validatePayment(app);
     }
 
-    private void validateSubmissionCore(Application app) {
+    // private void validateSubmissionCore(Application app) {
 
-        validatePersonalInfo(app);
-        validateEducation(app);
-        validateProgrammeChoice(app);
+    //     validatePersonalInfo(app);
+    //     validateEducation(app);
+    //     validateProgrammeChoice(app);
 
-        // TEMP disabled modules
-        // validateReferees(app);
-        // validatePayment(app);
-    }
+    //     // TEMP disabled modules
+    //     // validateReferees(app);
+    //     // validatePayment(app);
+    // }
 
     public ApplicationProgressDto getCurrentStep(Long applicationId) {
 

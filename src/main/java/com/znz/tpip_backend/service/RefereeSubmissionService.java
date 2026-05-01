@@ -14,6 +14,7 @@ import com.znz.tpip_backend.repository.RefereeSubmissionRepository;
 
 import lombok.RequiredArgsConstructor;
 
+
 @Service
 @RequiredArgsConstructor
 public class RefereeSubmissionService {
@@ -23,21 +24,34 @@ public class RefereeSubmissionService {
     private final ModelMapper modelMapper;
     private final ApplicationEventPublisherService eventPublisher;
 
-    public RefereeSubmissionDTO submit(Long refereeId, RefereeSubmissionDTO dto) {
+    public RefereeSubmissionDTO submitByToken(String token, RefereeSubmissionDTO dto) {
 
-        Referee referee = refereeRepository.findById(refereeId)
-                .orElseThrow(() -> new RuntimeException("Referee not found"));
+        Referee referee = refereeRepository.findByToken(token)
+                .orElseThrow(() -> new RuntimeException("Invalid or missing token"));
 
+        // check expiry
+        if (referee.getTokenExpiry() == null ||
+                referee.getTokenExpiry().isBefore(LocalDateTime.now())) {
+            throw new RuntimeException("Token expired");
+        }
+
+        // prevent double submission
+        if (referee.getStatus() == RefereeStatus.SUBMITTED) {
+            throw new RuntimeException("Referee already submitted response");
+        }
+
+        // map submission
         RefereeSubmission submission = modelMapper.map(dto, RefereeSubmission.class);
         submission.setReferee(referee);
 
         RefereeSubmission saved = submissionRepository.save(submission);
 
+        // update referee status
         referee.setStatus(RefereeStatus.SUBMITTED);
         referee.setSubmittedAt(LocalDateTime.now());
         refereeRepository.save(referee);
 
-        // 🔥 EVENT TRIGGER
+        // trigger workflow event
         eventPublisher.publish(
                 referee.getApplication().getId(),
                 referee.getApplication().getApplicant().getId(),

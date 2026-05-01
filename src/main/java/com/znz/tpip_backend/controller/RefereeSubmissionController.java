@@ -15,11 +15,20 @@ public class RefereeSubmissionController {
 
     private final RefereeSubmissionService service;
 
-    @PostMapping("/{refereeId}")
-    public ResponseEntity<RefereeSubmissionDTO> submit(
-            @PathVariable Long refereeId,
+    // @PostMapping("/{refereeId}")
+    // public ResponseEntity<RefereeSubmissionDTO> submit(
+    // @PathVariable Long refereeId,
+    // @RequestBody RefereeSubmissionDTO dto) {
+
+    // return ResponseEntity.ok(service.submit(refereeId, dto));
+    // }
+
+    // ================= SUBMIT USING TOKEN =================
+    @PostMapping("/submit")
+    public ResponseEntity<RefereeSubmissionDTO> submitByToken(
+            @RequestParam String token,
             @RequestBody RefereeSubmissionDTO dto) {
 
-        return ResponseEntity.ok(service.submit(refereeId, dto));
+        return ResponseEntity.ok(service.submitByToken(token, dto));
     }
 }

@@ -36,8 +36,9 @@ public class ApplicationWorkflowListener {
     // moved = advanceOneStep(app);
     // } while (moved);
     // }
-    
-    // This allows:Auto jump from PERSONAL → SUBMISSION in one go if everything is filled
+
+    // This allows:Auto jump from PERSONAL → SUBMISSION in one go if everything is
+    // filled
     private void evaluateAndAdvance(Application app) {
         boolean moved;
 
@@ -48,7 +49,7 @@ public class ApplicationWorkflowListener {
 
     // private void evaluateAndAdvance(Application app) {
 
-    //     advanceOneStep(app); // ONLY ONCE
+    // advanceOneStep(app); // ONLY ONCE
     // }
 
     private boolean advanceOneStep(Application app) {
@@ -83,33 +84,32 @@ public class ApplicationWorkflowListener {
                     return true;
                 }
             }
-            // 3 CASES IS TEMP COMMENTED
-            // case PROGRAMME_CHOICE -> {
-            // if (isProgrammeChoiceComplete(app)) {
-            // app.setCurrentStep(ApplicationStep.REFEREES);
-            // return true;
-            // }
-            // }
-
-            // case REFEREES -> {
-            // if (isRefereesComplete(app)) {
-            // app.setCurrentStep(ApplicationStep.PAYMENT);
-            // return true;
-            // }
-            // }
-
-            // case PAYMENT -> {
-            // if (isPaymentComplete(app)) {
-            // app.setCurrentStep(ApplicationStep.SUBMISSION);
-            // return true;
-            // }
-            // }
             case PROGRAMME_CHOICE -> {
                 if (isProgrammeChoiceComplete(app)) {
+                    app.setCurrentStep(ApplicationStep.REFEREES);
+                    return true;
+                }
+            }
+
+            case REFEREES -> {
+                if (isRefereesComplete(app)) {
+                    app.setCurrentStep(ApplicationStep.PAYMENT);
+                    return true;
+                }
+            }
+
+            case PAYMENT -> {
+                if (isPaymentComplete(app)) {
                     app.setCurrentStep(ApplicationStep.SUBMISSION);
                     return true;
                 }
             }
+            // case PROGRAMME_CHOICE -> {
+            // if (isProgrammeChoiceComplete(app)) {
+            // app.setCurrentStep(ApplicationStep.SUBMISSION);
+            // return true;
+            // }
+            // }
             default -> {
                 return false;
             }
