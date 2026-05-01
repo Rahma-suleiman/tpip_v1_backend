@@ -43,8 +43,11 @@ public class EducationService {
         Application app = getApplication(applicant.getId());
 
         // ✅ EVENT
-        eventPublisher.publish(app.getId(), applicant.getId(), ApplicationStep.EDUCATION);
-
+        // eventPublisher.publish(app.getId(),
+        // applicant.getId(),ApplicationStep.EDUCATION);
+        if (app.getCurrentStep() == ApplicationStep.EDUCATION) {
+            eventPublisher.publish(app.getId(), applicant.getId(), ApplicationStep.EDUCATION);
+        }
         return mapToDto(saved);
     }
 
@@ -65,8 +68,11 @@ public class EducationService {
         Application app = getApplication(education.getApplicant().getId());
 
         // ✅ EVENT
-        eventPublisher.publish(app.getId(), education.getApplicant().getId(), ApplicationStep.EDUCATION);
-
+        // eventPublisher.publish(app.getId(), education.getApplicant().getId(),
+        // ApplicationStep.EDUCATION);
+        if (app.getCurrentStep() == ApplicationStep.EDUCATION) {
+            eventPublisher.publish(app.getId(), education.getApplicant().getId(), ApplicationStep.EDUCATION);
+        }
         return mapToDto(saved);
     }
 
@@ -92,7 +98,10 @@ public class EducationService {
         Application app = getApplication(applicantId);
 
         // ✅ EVENT (important)
-        eventPublisher.publish(app.getId(), applicantId, ApplicationStep.EDUCATION);
+        // eventPublisher.publish(app.getId(), applicantId, ApplicationStep.EDUCATION);
+        if (app.getCurrentStep() == ApplicationStep.EDUCATION) {
+            eventPublisher.publish(app.getId(), applicantId, ApplicationStep.EDUCATION);
+        }
     }
 
     // ================= APPLICATION FETCH =================
@@ -225,45 +234,46 @@ public class EducationService {
 }
 
 // {
-//   "level": "O_LEVEL",
-//   "institutionName": "Lumumba Secondary School",
-//   "programmeName": null,
-//   "completionYear": 2018,
-//   "gpa": null,
-//   "classification": null,
-//   "description": "Form IV Certificate - Zanzibar O-Level Education",
-//   "applicantId": 1,
-//   "subjects": [
-//     { "subjectName": "Mathematics", "grade": "A" },
-//     { "subjectName": "English", "grade": "B" },
-//     { "subjectName": "Biology", "grade": "A" },
-//     { "subjectName": "Civics", "grade": "B+" }
-//   ]
+// "level": "O_LEVEL",
+// "institutionName": "Lumumba Secondary School",
+// "programmeName": null,
+// "completionYear": 2018,
+// "gpa": null,
+// "classification": null,
+// "description": "Form IV Certificate - Zanzibar O-Level Education",
+// "applicantId": 1,
+// "subjects": [
+// { "subjectName": "Mathematics", "grade": "A" },
+// { "subjectName": "English", "grade": "B" },
+// { "subjectName": "Biology", "grade": "A" },
+// { "subjectName": "Civics", "grade": "B+" }
+// ]
 // }
 
 // {
-//   "level": "A_LEVEL",
-//   "institutionName": "Forodhani Secondary School",
-//   "programmeName": "PCM",
-//   "completionYear": 2020,
-//   "gpa": null,
-//   "classification": null,
-//   "description": "Advanced Certificate of Secondary Education (ACSEE)",
-//   "applicantId": 2,
-//   "subjects": [
-//     { "subjectName": "Physics", "grade": "A" },
-//     { "subjectName": "Mathematics", "grade": "A" },
-//     { "subjectName": "Chemistry", "grade": "B+" }
-//   ]
+// "level": "A_LEVEL",
+// "institutionName": "Forodhani Secondary School",
+// "programmeName": "PCM",
+// "completionYear": 2020,
+// "gpa": null,
+// "classification": null,
+// "description": "Advanced Certificate of Secondary Education (ACSEE)",
+// "applicantId": 2,
+// "subjects": [
+// { "subjectName": "Physics", "grade": "A" },
+// { "subjectName": "Mathematics", "grade": "A" },
+// { "subjectName": "Chemistry", "grade": "B+" }
+// ]
 // }
 // {
-//   "level": "DIPLOMA",
-//   "institutionName": "State University of Zanzibar (SUZA)",
-//   "programmeName": "Information Technology",
-//   "completionYear": 2023,
-//   "gpa": "3.9",
-//   "classification": "FIRST",
-//   "description": "Diploma in Information Technology - Software and Systems Track",
-//   "applicantId": 3,
-//   "subjects": []
+// "level": "DIPLOMA",
+// "institutionName": "State University of Zanzibar (SUZA)",
+// "programmeName": "Information Technology",
+// "completionYear": 2023,
+// "gpa": "3.9",
+// "classification": "FIRST",
+// "description": "Diploma in Information Technology - Software and Systems
+// Track",
+// "applicantId": 3,
+// "subjects": []
 // }

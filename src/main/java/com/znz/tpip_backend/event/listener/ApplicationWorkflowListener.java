@@ -28,13 +28,17 @@ public class ApplicationWorkflowListener {
         applicationRepository.save(app);
     }
 
+    // private void evaluateAndAdvance(Application app) {
+
+    // boolean moved;
+
+    // do {
+    // moved = advanceOneStep(app);
+    // } while (moved);
+    // }
     private void evaluateAndAdvance(Application app) {
 
-        boolean moved;
-
-        do {
-            moved = advanceOneStep(app);
-        } while (moved);
+        advanceOneStep(app); // ONLY ONCE
     }
 
     private boolean advanceOneStep(Application app) {
@@ -48,13 +52,21 @@ public class ApplicationWorkflowListener {
                 }
             }
 
+            // case EDUCATION -> {
+            //     if (isEducationComplete(app)) {
+            //         app.setCurrentStep(ApplicationStep.WORK_EXPERIENCE);
+            //         return true;
+            //     }
+            // }
+
             case EDUCATION -> {
-                if (isEducationComplete(app)) {
+                if (app.getCurrentStep() == ApplicationStep.EDUCATION
+                        && isEducationComplete(app)) {
+
                     app.setCurrentStep(ApplicationStep.WORK_EXPERIENCE);
                     return true;
                 }
             }
-
             case WORK_EXPERIENCE -> {
                 if (isWorkExperienceComplete(app)) {
                     app.setCurrentStep(ApplicationStep.PROGRAMME_CHOICE);

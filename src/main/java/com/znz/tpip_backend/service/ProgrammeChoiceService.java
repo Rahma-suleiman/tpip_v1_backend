@@ -83,10 +83,11 @@ public class ProgrammeChoiceService {
 
                 ProgrammeChoice saved = programmeChoiceRepository.save(choice);
 
-                eventPublisher.publish(
-                                app.getId(),
-                                app.getApplicant().getId(),
-                                ApplicationStep.PROGRAMME_CHOICE);
+                // eventPublisher.publish(app.getId(), app.getApplicant().getId(), ApplicationStep.PROGRAMME_CHOICE);
+                if (app.getCurrentStep() == ApplicationStep.PROGRAMME_CHOICE) {
+                        // eventPublisher.publish(app.getId(), app.getApplicant().getId(),ApplicationStep.PROGRAMME_CHOICE);
+                        eventPublisher.publish(app.getId(), app.getApplicant().getId(),ApplicationStep.PROGRAMME_CHOICE);
+                }
 
                 return map(saved);
         }
@@ -158,6 +159,7 @@ public class ProgrammeChoiceService {
                                 choice.getApplication().getApplicant().getId(),
                                 ApplicationStep.PROGRAMME_CHOICE);
 
+                                
                 return map(saved);
         }
 
@@ -239,40 +241,21 @@ public class ProgrammeChoiceService {
 // 3 CHOICES FOR APPLICANT 1
 // {
 // "preferenceRank": 1,
-// "matchScore": 85,
-// "isEligible": true,
-// "eligibilityRemark": "Meets O-Level requirement",
 // "applicationId": 1,
-// "programmeId": 3
+// "programmeId": 1
+// }
+// TEST ELIGIBILITY(APPLICANT 1)
+// {
+// "preferenceRank": 2,
+// "applicationId": 1,
+// "programmeId": 4
 // }
 // {
 // "preferenceRank": 3,
-// "matchScore": 78,
-// "isEligible": true,
-// "eligibilityRemark": "Meets minimum requirement",
-// "applicationId": 1,
-// "programmeId": 2
-// }
-// TEST MAX 3 LIMIT:THIS shld fail(bcz Maximum 3 programme choices allowed i.e
-// preference rank allowed 1-3 and this payload is 4)
-// {
-// "preferenceRank": 4,
-// "matchScore": 70,
-// "isEligible": true,
-// "eligibilityRemark": "Extra choice beyond limit",
-// "applicationId": 1,
-// "programmeId": 2
-// }
-// TEST DUPLICATE PROGRAMME:THIS shld fail(bcz duplicate programme not allowed
-// i.e programme id 3 has already been choosen for this applicant)
-// {
-// "preferenceRank": 2,
-// "matchScore": 80,
-// "isEligible": true,
-// "eligibilityRemark": "Duplicate programme test",
 // "applicationId": 1,
 // "programmeId": 3
 // }
+
 // TEST DUPLICATE RANK (also fail,rank already choosen)
 // {
 // "preferenceRank": 1,
@@ -282,64 +265,53 @@ public class ProgrammeChoiceService {
 // "applicationId": 1,
 // "programmeId": 2
 // }
-// TEST INELIGIBLE APPLICANT
-// {
-// "preferenceRank": 2,
-// "matchScore": 95,
-// "isEligible": false,
-// "eligibilityRemark": "Should be rejected due to level mismatch",
-// "applicationId": 1,
-// "programmeId": 1
-// }
+
 // 3 CHOICES FOR APPLICANT 2
-
 // {
 // "preferenceRank": 1,
-// "matchScore": 92,
-// "isEligible": true,
-// "eligibilityRemark": "Meets A-Level requirement",
 // "applicationId": 2,
-// "programmeId": 1
+// "programmeId": 2
 // }
+// TEST ELIGIBILITY(APPLICANT 2):but it will b saved and rank will exist
 // {
 // "preferenceRank": 2,
-// "matchScore": 85,
-// "isEligible": true,
-// "eligibilityRemark": "Eligible - close field match",
+// "applicationId": 2,
+// "programmeId": 5
+// }
+// TEST DUPLICATE PROGRAMME:THIS shld fail(bcz duplicate programme not allowed)
+// {
+// "preferenceRank": 3,
 // "applicationId": 2,
 // "programmeId": 2
 // }
 // {
 // "preferenceRank": 3,
-// "matchScore": 78,
-// "isEligible": true,
-// "eligibilityRemark": "Eligible - minimum requirement met",
 // "applicationId": 2,
 // "programmeId": 3
 // }
+// TEST MAX 3 LIMIT:THIS shld fail(bcz Maximum 3 programme choices allowed i.e
+// preference rank allowed 1-3 and this payload is 4)
+// {
+// "preferenceRank": 4,
+// "applicationId": 2,
+// "programmeId": 4
+// }
+
 // 3 CHOICES FOR APPLICANT 3
-
 // {
 // "preferenceRank": 1,
-// "matchScore": 88,
-// "isEligible": true,
-// "eligibilityRemark": "Meets Diploma requirement",
 // "applicationId": 3,
-// "programmeId": 2
+// "programmeId": 3
 // }
+//
+// TEST ELIGIBILITY(APPLICANT 3):but it will b saved
 // {
 // "preferenceRank": 2,
-// "matchScore": 80,
-// "isEligible": true,
-// "eligibilityRemark": "Eligible - related field",
 // "applicationId": 3,
-// "programmeId": 1
+// "programmeId": 5
 // }
 // {
 // "preferenceRank": 3,
-// "matchScore": 70,
-// "isEligible": false,
-// "eligibilityRemark": "Not eligible - below required level",
 // "applicationId": 3,
-// "programmeId": 3
+// "programmeId": 2
 // }

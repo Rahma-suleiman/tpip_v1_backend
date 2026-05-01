@@ -38,8 +38,11 @@ public class WorkExperienceService {
         Application app = getApplication(applicant.getId());
 
         // ✅ EVENT
-        eventPublisher.publish(app.getId(), applicant.getId(), ApplicationStep.WORK_EXPERIENCE);
-
+        // eventPublisher.publish(app.getId(), applicant.getId(),
+        // ApplicationStep.WORK_EXPERIENCE);
+        if (app.getCurrentStep() == ApplicationStep.WORK_EXPERIENCE) {
+            eventPublisher.publish(app.getId(), applicant.getId(), ApplicationStep.WORK_EXPERIENCE);
+        }
         return mapToDto(saved);
     }
 
@@ -57,8 +60,11 @@ public class WorkExperienceService {
         Application app = getApplication(work.getApplicant().getId());
 
         // ✅ EVENT
-        eventPublisher.publish(app.getId(), work.getApplicant().getId(), ApplicationStep.WORK_EXPERIENCE);
-
+        // eventPublisher.publish(app.getId(), work.getApplicant().getId(),
+        // ApplicationStep.WORK_EXPERIENCE);
+        if (app.getCurrentStep() == ApplicationStep.WORK_EXPERIENCE) {
+            eventPublisher.publish(app.getId(), work.getApplicant().getId(), ApplicationStep.WORK_EXPERIENCE);
+        }
         return mapToDto(saved);
     }
 
@@ -82,7 +88,10 @@ public class WorkExperienceService {
         Application app = getApplication(applicantId);
 
         // ✅ EVENT
-        eventPublisher.publish(app.getId(), applicantId, ApplicationStep.WORK_EXPERIENCE);
+        // eventPublisher.publish(app.getId(), applicantId,ApplicationStep.WORK_EXPERIENCE);
+        if (app.getCurrentStep() == ApplicationStep.WORK_EXPERIENCE) {
+            eventPublisher.publish(app.getId(), applicantId,ApplicationStep.WORK_EXPERIENCE);
+        }
     }
 
     // ================= HELPERS =================
@@ -138,58 +147,3 @@ public class WorkExperienceService {
         return dto;
     }
 }
-
-// {
-// "employerName": "Tanzania Revenue Authority",
-// "employerAddress": "Dar es Salaam",
-// "employerPhone": "255700000001",
-// "employerEmail": "hr@tra.go.tz",
-// "jobTitle": "Intern",
-// "department": "IT",
-// "responsibilities": "Data entry and system support",
-// "startDate": "2023-01-01",
-// "endDate": "2023-06-01",
-// "isCurrentlyEmployed": false,
-// "employmentType": "FULL_TIME",
-// "country": "Tanzania",
-// "region": "URBAN_WEST",
-// "district": "MJINI",
-// "city": "Zanzibar",
-// "applicantId": 1
-// }
-// {
-// "employerName": "NMB Bank",
-// "employerAddress": "Samora Avenue",
-// "employerPhone": "255700000002",
-// "employerEmail": "hr@nmb.co.tz",
-// "jobTitle": "Assistant",
-// "department": "Finance",
-// "responsibilities": "Customer support",
-// "startDate": "2022-03-01",
-// "endDate": "2022-12-01",
-// "isCurrentlyEmployed": false,
-// "employmentType": "PART_TIME",
-// "country": "Tanzania",
-// "region": "URBAN_WEST",
-// "district": "KUSINI",
-// "city": "Zanzibar",
-// "applicantId": 2
-// }
-// {
-// "employerName": "Vodacom Tanzania",
-// "employerAddress": "Makumbusho",
-// "employerPhone": "255700000003",
-// "employerEmail": "hr@vodacom.co.tz",
-// "jobTitle": "Support Agent",
-// "department": "Customer Care",
-// "responsibilities": "Call center support",
-// "startDate": "2021-05-01",
-// "endDate": "2022-05-01",
-// "isCurrentlyEmployed": false,
-// "employmentType": "FULL_TIME",
-// "country": "Tanzania",
-// "region": "URBAN_WEST",
-// "district": "WETE",
-// "city": "Pemba",
-// "applicantId": 3
-// }

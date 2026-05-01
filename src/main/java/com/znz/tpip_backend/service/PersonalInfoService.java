@@ -58,11 +58,13 @@ public class PersonalInfoService {
         Application app = getApplication(applicantId);
 
         // ✅ EVENT
-        eventPublisher.publish(app.getId(), applicantId, ApplicationStep.PERSONAL_INFO);
+        // eventPublisher.publish(app.getId(), applicantId,ApplicationStep.PERSONAL_INFO);
+        if (app.getCurrentStep() == ApplicationStep.PERSONAL_INFO) {
+            eventPublisher.publish(app.getId(), applicantId, ApplicationStep.PERSONAL_INFO);
+        }
 
         return mapToDto(saved);
     }
-
 
     private Application getApplication(Long applicantId) {
         return applicationRepository.findByApplicantId(applicantId)
