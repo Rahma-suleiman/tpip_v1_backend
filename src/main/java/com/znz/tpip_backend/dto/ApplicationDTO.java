@@ -27,7 +27,10 @@ public class ApplicationDTO {
 
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private LocalDateTime submittedAt;
-
+    
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    private LocalDateTime lockedAt;
+    
     // relationships (lightweight references)
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private List<Long> refereeIds;

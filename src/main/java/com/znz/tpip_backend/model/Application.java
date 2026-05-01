@@ -59,7 +59,8 @@ public class Application {
     private boolean locked = false;
 
     private LocalDateTime submittedAt;
-
+    
+    private LocalDateTime lockedAt;
     // fk
     @ManyToOne
     @JoinColumn(name = "applicant_id", nullable = false)
@@ -90,21 +91,21 @@ public class Application {
 
 // PHASE 2: APPLICATION INITIALIZATION
 // 4. System checks:
-//    → Does Application exist for (Applicant + Active Intake)?
+// → Does Application exist for (Applicant + Active Intake)?
 
-//    NO → Create new Application (status = DRAFT)
-//    YES → Resume existing Application
+// NO → Create new Application (status = DRAFT)
+// YES → Resume existing Application
 
 // PHASE 3: APPLICATION WIZARD (CORE PROCESS)
 // 5. Applicant fills multi-step wizard:
 
-//    Step 1: Personal Info
-//    Step 2: Education
-//    Step 3: Work Experience (optional)
-//    Step 4: Programme Choice
-//    Step 5: Referees (optional in your current design)
-//    Step 6: Payment (optional in your current design)
-//    Step 7: Review
+// Step 1: Personal Info
+// Step 2: Education
+// Step 3: Work Experience (optional)
+// Step 4: Programme Choice
+// Step 5: Referees (optional in your current design)
+// Step 6: Payment (optional in your current design)
+// Step 7: Review
 
 // PHASE 4: SUBMISSION
 // 6. System validates required steps
@@ -117,5 +118,5 @@ public class Application {
 // 11. Interview scheduled (optional)
 // 12. Interview conducted
 // 13. Final decision:
-//     → ACCEPTED / REJECTED / WAITLISTED
+// → ACCEPTED / REJECTED / WAITLISTED
 // 14. If accepted → PLACED

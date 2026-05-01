@@ -1,9 +1,11 @@
 package com.znz.tpip_backend.service;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 import org.springframework.stereotype.Service;
 
+import com.znz.tpip_backend.dto.ApplicationDTO;
 import com.znz.tpip_backend.dto.ApplicationProgressDto;
 // import com.znz.tpip_backend.controller.ApplicationProgressDto;
 import com.znz.tpip_backend.enums.ApplicationStatus;
@@ -27,85 +29,88 @@ public class ApplicationService {
     private final ApplicationRepository applicationRepository;
     private final IntakeRepository intakeRepository;
 
+    public ApplicationDTO getApplicationDTO(Long applicationId) {
+
+        Application app = getApplication(applicationId);
+
+        return mapToDTO(app);
+    }
+
     // ================= CREATE OR GET =================
-    public Application createOrGetApplication(Long applicantId) {
+    public ApplicationDTO createOrGetApplication(Long applicantId) {
 
         Intake activeIntake = intakeRepository.findByActiveTrue()
                 .orElseThrow(() -> new RuntimeException("No active intake found"));
 
-        return applicationRepository
+        Application app = applicationRepository
                 .findByApplicantIdAndIntakeId(applicantId, activeIntake.getId())
                 .orElseGet(() -> {
 
-                    Application app = new Application();
+                    Application newApp = new Application();
 
                     Applicant applicant = new Applicant();
-                    applicant.setId(applicantId); // lightweight reference
+                    applicant.setId(applicantId);
 
-                    app.setApplicant(applicant);
-                    app.setIntake(activeIntake);
+                    newApp.setApplicant(applicant);
+                    newApp.setIntake(activeIntake);
 
-                    app.setStatus(ApplicationStatus.DRAFT);
-                    app.setCurrentStep(ApplicationStep.PERSONAL_INFO);
-                    app.setLocked(false);
+                    newApp.setStatus(ApplicationStatus.DRAFT);
+                    newApp.setCurrentStep(ApplicationStep.PERSONAL_INFO);
+                    newApp.setLocked(false);
+                    newApp.setIndexNumber(generateApplicationIndex(activeIntake));
 
-                    app.setIndexNumber(generateApplicationIndex(activeIntake));
-
-                    return applicationRepository.save(app);
+                    return applicationRepository.save(newApp);
                 });
+
+        return mapToDTO(app);
     }
 
     // ================= MOVE STEP =================
-    public Application moveToStep(Long applicationId, ApplicationStep nextStep) {
+     public ApplicationDTO moveToStep(Long applicationId, ApplicationStep nextStep) {
 
         Application app = getApplication(applicationId);
 
-        if (app.isLocked()) {
-            throw new IllegalStateException("Application is locked");
-        }
+        checkIfLocked(app);
 
-        // 1. validate current step is complete
         validateStepCompletion(app, app.getCurrentStep());
 
-        // 2. validate transition
         if (!isValidStepTransition(app.getCurrentStep(), nextStep)) {
             throw new IllegalStateException("Invalid step transition");
         }
 
-        // 3. move forward
         app.setCurrentStep(nextStep);
 
-        return applicationRepository.save(app);
+        return mapToDTO(applicationRepository.save(app));
     }
 
     // ================= SUBMIT =================
-    public Application submitApplication(Long applicationId) {
+       public ApplicationDTO submitApplication(Long applicationId) {
 
         Application app = getApplication(applicationId);
 
-        if (app.isLocked()) {
-            throw new IllegalStateException("Application already submitted");
-        }
+        checkIfLocked(app);
 
         if (app.getCurrentStep() != ApplicationStep.SUBMISSION) {
             throw new IllegalStateException("Complete all steps before submission");
         }
 
-        // validateSubmissionReadiness(app);
-        // Temp
         validateSubmissionReadiness(app);
 
         app.setStatus(ApplicationStatus.SUBMITTED);
         app.setSubmittedAt(LocalDateTime.now());
-        app.setLocked(true);
 
-        return applicationRepository.save(app);
+        app.setLocked(true);
+        app.setLockedAt(LocalDateTime.now());
+
+        return mapToDTO(applicationRepository.save(app));
     }
 
     // ================= STATUS UPDATE =================
-    public Application updateStatus(Long applicationId, ApplicationStatus newStatus) {
+    public ApplicationDTO updateStatus(Long applicationId, ApplicationStatus newStatus) {
 
         Application app = getApplication(applicationId);
+
+        checkIfLocked(app);
 
         if (!isValidStatusTransition(app.getStatus(), newStatus)) {
             throw new IllegalStateException(
@@ -114,7 +119,7 @@ public class ApplicationService {
 
         app.setStatus(newStatus);
 
-        return applicationRepository.save(app);
+        return mapToDTO(applicationRepository.save(app));
     }
 
     // ================= COMMON FETCH =================
@@ -189,8 +194,12 @@ public class ApplicationService {
             case PAYMENT -> validatePayment(app);
 
             // case SUBMISSION -> validateSubmissionReadiness(app);
-            // Temporary
-            case SUBMISSION -> validateSubmissionReadiness(app);
+            case SUBMISSION -> {
+                // FINAL SAFETY CHECK ONLY
+                if (!app.isLocked()) {
+                    throw new IllegalStateException("Application must be locked after submission");
+                }
+            }
         }
     }
 
@@ -313,13 +322,13 @@ public class ApplicationService {
 
     // private void validateSubmissionCore(Application app) {
 
-    //     validatePersonalInfo(app);
-    //     validateEducation(app);
-    //     validateProgrammeChoice(app);
+    // validatePersonalInfo(app);
+    // validateEducation(app);
+    // validateProgrammeChoice(app);
 
-    //     // TEMP disabled modules
-    //     // validateReferees(app);
-    //     // validatePayment(app);
+    // // TEMP disabled modules
+    // // validateReferees(app);
+    // // validatePayment(app);
     // }
 
     public ApplicationProgressDto getCurrentStep(Long applicationId) {
@@ -348,6 +357,51 @@ public class ApplicationService {
         return dto;
     }
 
+    private void checkIfLocked(Application app) {
+        if (app.isLocked()) {
+            throw new IllegalStateException("Application is locked. No further modifications allowed.");
+        }
+    }
+
+    private ApplicationDTO mapToDTO(Application app) {
+
+        ApplicationDTO dto = new ApplicationDTO();
+
+        dto.setId(app.getId());
+        dto.setIndexNumber(app.getIndexNumber());
+
+        dto.setCurrentStep(app.getCurrentStep().getOrder());
+        dto.setStatus(app.getStatus());
+
+        dto.setLocked(app.isLocked());
+        dto.setLockedAt(app.getLockedAt());
+        dto.setSubmittedAt(app.getSubmittedAt());
+
+        // ================= RELATIONSHIPS =================
+
+        dto.setRefereeIds(
+                app.getReferees() != null
+                        ? app.getReferees().stream().map(r -> r.getId()).toList()
+                        : List.of());
+
+        dto.setProgrammeChoiceIds(
+                app.getProgrammeChoices() != null
+                        ? app.getProgrammeChoices().stream().map(pc -> pc.getId()).toList()
+                        : List.of());
+
+        dto.setPaymentId(
+                app.getPayment() != null ? app.getPayment().getId() : null);
+
+        // ================= COMPUTED =================
+
+        dto.setRefereeCount(
+                app.getReferees() != null ? app.getReferees().size() : 0);
+
+        dto.setPaymentStatus(
+                app.getPayment() != null ? app.getPayment().getStatus() : null);
+
+        return dto;
+    }
 }
 // Next we will validate:
 // 👉 "data inside each step"
