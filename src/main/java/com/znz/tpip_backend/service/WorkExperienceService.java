@@ -147,3 +147,57 @@ public class WorkExperienceService {
         return dto;
     }
 }
+// {
+//   "employerName": "Zanzibar Revenue Board",
+//   "employerAddress": "Mnazi Mmoja, Stone Town",
+//   "employerPhone": "0242234567",
+//   "employerEmail": "hr@zrb.go.tz",
+//   "jobTitle": "Office Assistant Intern",
+//   "department": "Administration",
+//   "responsibilities": "Filing documents, assisting officers, data entry",
+//   "startDate": "2024-01-10",
+//   "endDate": "2024-06-10",
+//   "isCurrentlyEmployed": false,
+//   "employmentType": "INTERNSHIP",
+//   "country": "Tanzania",
+//   "region": "URBAN_WEST",
+//   "district": "MJINI",
+//   "city": "Zanzibar City",
+//   "applicantId": 1
+// }
+// {
+//   "employerName": "Zanzibar ICT Commission",
+//   "employerAddress": "Maisara, Stone Town",
+//   "employerPhone": "0242239999",
+//   "employerEmail": "support@zict.go.tz",
+//   "jobTitle": "IT Support Assistant",
+//   "department": "Information Technology",
+//   "responsibilities": "System troubleshooting, user support, network setup",
+//   "startDate": "2023-03-01",
+//   "endDate": "2023-12-01",
+//   "isCurrentlyEmployed": false,
+//   "employmentType": "CONTRACT",
+//   "country": "Tanzania",
+//   "region": "URBAN_WEST",
+//   "district": "MAGHARIBI_A",
+//   "city": "Zanzibar City",
+//   "applicantId": 2
+// }
+// {
+//   "employerName": "Pemba Hospital",
+//   "employerAddress": "Wete Town Center",
+//   "employerPhone": "0242456789",
+//   "employerEmail": "hr@pembahospital.go.tz",
+//   "jobTitle": "Data Clerk",
+//   "department": "Health Records",
+//   "responsibilities": "Patient data entry, record management, filing reports",
+//   "startDate": "2022-06-01",
+//   "endDate": "2023-06-01",
+//   "isCurrentlyEmployed": false,
+//   "employmentType": "FULL_TIME",
+//   "country": "Tanzania",
+//   "region": "NORTH_PEMBA",
+//   "district": "WETE",
+//   "city": "Wete",
+//   "applicantId": 3
+// }

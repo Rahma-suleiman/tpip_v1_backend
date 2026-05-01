@@ -1,11 +1,10 @@
 package com.znz.tpip_backend.dto;
 
-import lombok.Data;
-import java.time.LocalDateTime;
-
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.znz.tpip_backend.enums.RefereeStatus;
+import lombok.Data;
 
+import java.time.LocalDateTime;
 @Data
 public class RefereeDTO {
 
@@ -19,14 +18,14 @@ public class RefereeDTO {
     private String phone;
     private String relationship;
 
-    // submission data
-    private Integer rating;
-    private String narrative;
-    private boolean declarationAccepted;
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    private String status;
 
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
-    private RefereeStatus status;
+    private String token;
 
-    // fk
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    private LocalDateTime tokenExpiry;
+
     private Long applicationId;
 }

@@ -78,55 +78,21 @@ public class ProgrammeChoiceService {
                 choice.setProgramme(programme);
                 choice.setPreferenceRank(dto.getPreferenceRank());
 
-                // 🔥 SYSTEM ALWAYS COMPUTES THESE
+                // SYSTEM ALWAYS COMPUTES THESE
                 applyEligibility(choice, app.getApplicant(), programme);
 
                 ProgrammeChoice saved = programmeChoiceRepository.save(choice);
 
-                // eventPublisher.publish(app.getId(), app.getApplicant().getId(), ApplicationStep.PROGRAMME_CHOICE);
-                if (app.getCurrentStep() == ApplicationStep.PROGRAMME_CHOICE) {
-                        // eventPublisher.publish(app.getId(), app.getApplicant().getId(),ApplicationStep.PROGRAMME_CHOICE);
-                        eventPublisher.publish(app.getId(), app.getApplicant().getId(),ApplicationStep.PROGRAMME_CHOICE);
-                }
+                eventPublisher.publish(app.getId(), app.getApplicant().getId(), ApplicationStep.PROGRAMME_CHOICE);
+                // if (app.getCurrentStep() == ApplicationStep.PROGRAMME_CHOICE) {
+                //         // eventPublisher.publish(app.getId(), app.getApplicant().getId(),ApplicationStep.PROGRAMME_CHOICE);
+                //         eventPublisher.publish(app.getId(), app.getApplicant().getId(),ApplicationStep.PROGRAMME_CHOICE);
+                // }
 
                 return map(saved);
         }
 
         // ================= UPDATE =================
-        // public ProgrammeChoiceDto update(Long id, ProgrammeChoiceDto dto) {
-
-        // ProgrammeChoice choice = programmeChoiceRepository.findById(id)
-        // .orElseThrow(() -> new RuntimeException("Not found"));
-
-        // Programme programme = programmeRepository.findById(dto.getProgrammeId())
-        // .orElseThrow(() -> new RuntimeException("Programme not found"));
-
-        // List<ProgrammeChoice> existing = programmeChoiceRepository
-        // .findByApplicationId(choice.getApplication().getId());
-
-        // ProgrammeChoiceValidator.validateUpdate(
-        // existing,
-        // dto.getPreferenceRank(),
-        // dto.getProgrammeId(),
-        // id);
-
-        // choice.setProgramme(programme);
-        // choice.setPreferenceRank(dto.getPreferenceRank());
-
-        // applyEligibility(choice, choice.getApplication().getApplicant(), programme);
-
-        // ProgrammeChoice saved = programmeChoiceRepository.save(choice);
-
-        // Application app = choice.getApplication();
-
-        // // ✅ EVENT
-        // eventPublisher.publish(app.getId(), app.getApplicant().getId(),
-        // ApplicationStep.PROGRAMME_CHOICE);
-
-        // return map(saved);
-        // // return map(programmeChoiceRepository.save(choice));
-        // }
-
         public ProgrammeChoiceDto update(Long id, ProgrammeChoiceDto dto) {
 
                 ProgrammeChoice choice = programmeChoiceRepository.findById(id)
@@ -147,7 +113,6 @@ public class ProgrammeChoiceService {
                 choice.setProgramme(programme);
                 choice.setPreferenceRank(dto.getPreferenceRank());
 
-                // 🔥 ALWAYS RECALCULATE
                 applyEligibility(choice,
                                 choice.getApplication().getApplicant(),
                                 programme);

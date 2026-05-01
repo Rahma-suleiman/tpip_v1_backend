@@ -184,9 +184,9 @@ public class ApplicationService {
 
             case PROGRAMME_CHOICE -> validateProgrammeChoice(app);
 
-            case REFEREES -> validateReferees(app);
-
-            case PAYMENT -> validatePayment(app);
+            // below 2 line is commented TEMP
+            // case REFEREES -> validateReferees(app);
+            // case PAYMENT -> validatePayment(app);
 
             // case SUBMISSION -> validateSubmissionReadiness(app);
             // Temporary

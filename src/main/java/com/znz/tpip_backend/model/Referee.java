@@ -24,11 +24,6 @@ public class Referee {
     private String phone;
     private String relationship;
 
-    // recommendation data (Step 5 form)
-    private Integer rating;
-    private String narrative;
-    private boolean declarationAccepted;
-
     private String token;
     private LocalDateTime tokenExpiry;
     private LocalDateTime submittedAt;
