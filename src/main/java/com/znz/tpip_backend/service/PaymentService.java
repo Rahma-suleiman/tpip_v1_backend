@@ -66,6 +66,10 @@ public class PaymentService {
                 .map(p -> modelMapper.map(p, PaymentDTO.class))
                 .toList();
     }
+    public Payment getPaymentEntity(String referenceNumber) {
+    return paymentRepository.findByReferenceNumber(referenceNumber)
+            .orElseThrow(() -> new RuntimeException("Payment not found"));
+}
 }
 // REAL PAYMENT FLOW (IMPORTANT)
 
@@ -102,6 +106,16 @@ public class PaymentService {
 // {
 //   "amount": 0,
 //   "currency": "TZS",
+//   "channel": "MPESA",
+//   "method": "MOBILE_MONEY",
+//   "applicationId": 3,
+//   "payerPhone": "255789456123",
+//   "payerName": "Fatma Said",
+//   "feeWaived": true
+// }
+// {
+//   "amount": 0,
+//   "currency": "TZS",
 //   "channel": "BANK_TRANSFER",
 //   "method": "BANK_TRANSFER",
 //   "applicationId": 3,
@@ -109,6 +123,7 @@ public class PaymentService {
 //   "payerName": "Fatma Said",
 //   "feeWaived": true
 // }
+
 // Real MPESA Daraja API integration
 // ✔ 
 // Real Tigo Pesa API flow
@@ -118,3 +133,17 @@ public class PaymentService {
 // Finance dashboard (reconciliation system)
 // ✔ 
 // Admin fee waiver approval workflow
+
+
+
+// Admin fee waiver approval workflow
+// Applicant requests waiver
+//         ↓
+// Application marked: WAIVER_PENDING
+//         ↓
+// Admin reviews request
+//         ↓
+// APPROVE → payment auto-bypassed (Step advances to SUBMISSION)
+// REJECT  → applicant must pay normally
+//         ↓
+// Audit log + event-driven step update

@@ -4,6 +4,8 @@ import com.znz.tpip_backend.event.ApplicationStepUpdatedEvent;
 import com.znz.tpip_backend.enums.ApplicationStep;
 import com.znz.tpip_backend.model.Application;
 import com.znz.tpip_backend.repository.ApplicationRepository;
+import com.znz.tpip_backend.service.ApplicationStepEvaluator;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
@@ -13,6 +15,7 @@ import org.springframework.stereotype.Component;
 public class ApplicationWorkflowListener {
 
     private final ApplicationRepository applicationRepository;
+    private final ApplicationStepEvaluator evaluator;
 
     @EventListener
     public void handle(ApplicationStepUpdatedEvent event) {
@@ -47,49 +50,43 @@ public class ApplicationWorkflowListener {
         switch (app.getCurrentStep()) {
 
             case PERSONAL_INFO -> {
-                if (isPersonalInfoComplete(app)) {
+                if (evaluator.isPersonalInfoComplete(app)) {
                     app.setCurrentStep(ApplicationStep.EDUCATION);
                     return true;
                 }
             }
             case EDUCATION -> {
-                if (isEducationComplete(app)) {
+                if (evaluator.isEducationComplete(app)) {
                     app.setCurrentStep(ApplicationStep.WORK_EXPERIENCE);
                     return true;
                 }
             }
             case WORK_EXPERIENCE -> {
-                if (isWorkExperienceComplete(app)) {
+                if (evaluator.isWorkExperienceComplete(app)) {
                     app.setCurrentStep(ApplicationStep.PROGRAMME_CHOICE);
                     return true;
                 }
             }
             case PROGRAMME_CHOICE -> {
-                if (isProgrammeChoiceComplete(app)) {
+                if (evaluator.isProgrammeChoiceComplete(app)) {
                     app.setCurrentStep(ApplicationStep.REFEREES);
                     return true;
                 }
             }
 
             case REFEREES -> {
-                if (isRefereesComplete(app)) {
+                if (evaluator.isRefereesComplete(app)) {
                     app.setCurrentStep(ApplicationStep.PAYMENT);
                     return true;
                 }
             }
 
             case PAYMENT -> {
-                if (isPaymentComplete(app)) {
+                if (evaluator.isPaymentComplete(app)) {
                     app.setCurrentStep(ApplicationStep.SUBMISSION);
                     return true;
                 }
             }
-            // case PROGRAMME_CHOICE -> {
-            // if (isProgrammeChoiceComplete(app)) {
-            // app.setCurrentStep(ApplicationStep.SUBMISSION);
-            // return true;
-            // }
-            // }
             default -> {
                 return false;
             }
@@ -97,38 +94,5 @@ public class ApplicationWorkflowListener {
 
         return false;
     }
-    // ================= RULES =================
-
-    private boolean isPersonalInfoComplete(Application app) {
-        return app.getApplicant() != null
-                && app.getApplicant().getUser() != null;
-    }
-
-    private boolean isEducationComplete(Application app) {
-        return app.getApplicant().getEducations() != null
-                && !app.getApplicant().getEducations().isEmpty();
-    }
-
-    private boolean isWorkExperienceComplete(Application app) {
-        Boolean hasExp = app.getApplicant().getHasWorkExperience();
-
-        return !Boolean.TRUE.equals(hasExp) ||
-                (app.getApplicant().getWorkExperiences() != null
-                        && !app.getApplicant().getWorkExperiences().isEmpty());
-    }
-
-    private boolean isProgrammeChoiceComplete(Application app) {
-        return app.getProgrammeChoices() != null
-                && !app.getProgrammeChoices().isEmpty();
-    }
-
-    private boolean isRefereesComplete(Application app) {
-        return app.getReferees() != null
-                && app.getReferees().size() >= 2;
-    }
-
-    private boolean isPaymentComplete(Application app) {
-        return app.getPayment() != null
-                && app.getPayment().getStatus() == com.znz.tpip_backend.enums.PaymentStatus.PAID;
-    }
+   
 }

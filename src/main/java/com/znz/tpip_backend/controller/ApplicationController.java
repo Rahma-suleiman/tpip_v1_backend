@@ -87,4 +87,9 @@ public class ApplicationController {
                 return ResponseEntity.ok(
                                 applicationService.getCurrentStep(id));
         }
+
+        @GetMapping("/resume/{applicantId}")
+        public ResponseEntity<?> resume(@PathVariable Long applicantId) {
+                return ResponseEntity.ok(applicationService.resumeProgress(applicantId));
+        }
 }

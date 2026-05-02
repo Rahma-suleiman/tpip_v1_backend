@@ -11,20 +11,17 @@ public class ApplicationProgressDto {
     private Long applicantId;
 
     private ApplicationStep currentStep;
+    private ApplicationStep nextStep;   // ✅ ADDED (important for resume flow)
+
     private ApplicationStatus status;
 
     private boolean locked;
 
     private int progressPercentage;
+
     private String currentStepLabel;
+
+    private String nextStepLabel;       // ✅ ADDED (UI friendly)
+
+    private boolean canResume;          // ✅ ADDED (resume control flag)
 }
-// (API RESPONSE) EXAMPLE
-// {
-//   "applicationId": 12,
-//   "applicantId": 5,
-//   "currentStep": "EDUCATION",
-//   "status": "DRAFT",
-//   "locked": false,
-//   "progressPercentage": 33,
-//   "currentStepLabel": "EDUCATION"
-// }

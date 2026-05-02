@@ -28,6 +28,7 @@ public class ApplicationService {
 
     private final ApplicationRepository applicationRepository;
     private final IntakeRepository intakeRepository;
+    private final ApplicationStepEvaluator evaluator;
 
     public List<ApplicationDTO> getAllApplications() {
         return applicationRepository.findAll()
@@ -367,6 +368,79 @@ public class ApplicationService {
     private void checkIfLocked(Application app) {
         if (app.isLocked()) {
             throw new IllegalStateException("Application is locked. No further modifications allowed.");
+        }
+    }
+
+    public ApplicationProgressDto resumeProgress(Long applicantId) {
+
+        Intake activeIntake = intakeRepository.findByActiveTrue()
+                .orElseThrow(() -> new RuntimeException("No active intake found"));
+
+        Application app = applicationRepository
+                .findByApplicantIdAndIntakeId(applicantId, activeIntake.getId())
+                .orElseThrow(() -> new RuntimeException("No application found"));
+
+        ApplicationProgressDto dto = new ApplicationProgressDto();
+
+        dto.setApplicationId(app.getId());
+        dto.setApplicantId(app.getApplicant().getId());
+        dto.setCurrentStep(app.getCurrentStep());
+        dto.setStatus(app.getStatus());
+
+        // 👉 NEXT STEP LOGIC
+        dto.setNextStep(determineNextStep(app));
+
+        // progress
+        int totalSteps = ApplicationStep.values().length;
+        dto.setProgressPercentage(
+                (app.getCurrentStep().getOrder() * 100) / totalSteps);
+
+        return dto;
+    }
+
+    private ApplicationStep determineNextStep(Application app) {
+
+        switch (app.getCurrentStep()) {
+
+            case PERSONAL_INFO -> {
+                if (!evaluator.isPersonalInfoComplete(app))
+                    return ApplicationStep.PERSONAL_INFO;
+                return ApplicationStep.EDUCATION;
+            }
+
+            case EDUCATION -> {
+                if (!evaluator.isEducationComplete(app))
+                    return ApplicationStep.EDUCATION;
+                return ApplicationStep.WORK_EXPERIENCE;
+            }
+
+            case WORK_EXPERIENCE -> {
+                if (!evaluator.isWorkExperienceComplete(app))
+                    return ApplicationStep.WORK_EXPERIENCE;
+                return ApplicationStep.PROGRAMME_CHOICE;
+            }
+
+            case PROGRAMME_CHOICE -> {
+                if (!evaluator.isProgrammeChoiceComplete(app))
+                    return ApplicationStep.PROGRAMME_CHOICE;
+                return ApplicationStep.REFEREES;
+            }
+
+            case REFEREES -> {
+                if (!evaluator.isRefereesComplete(app))
+                    return ApplicationStep.REFEREES;
+                return ApplicationStep.PAYMENT;
+            }
+
+            case PAYMENT -> {
+                if (!evaluator.isPaymentComplete(app))
+                    return ApplicationStep.PAYMENT;
+                return ApplicationStep.SUBMISSION;
+            }
+
+            default -> {
+                return ApplicationStep.SUBMISSION;
+            }
         }
     }
 

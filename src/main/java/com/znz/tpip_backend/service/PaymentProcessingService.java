@@ -229,7 +229,9 @@ public class PaymentProcessingService {
         );
     }
 }
+// our SignatureService accepts anything containing: "VALID"
 // X-Signature: VALID_SIGNATURE/X-Signature: VALID
+// MPESA endpoint
 // {
 //   "referenceNumber": "APP-2026-1-542BFFD3",
 //   "transactionId": "MPESA-99887766",
@@ -237,4 +239,23 @@ public class PaymentProcessingService {
 //   "phone": "255712345678",
 //   "status": "SUCCESS",
 //   "provider": "MPESA",
+// }
+// X-Signature: VALID-TIGO-SIGNATURE
+// TIGO endpoint
+// {
+//   "referenceNumber": "APP-2026-2-9C64AAD6",
+//   "transactionId": "TIGO-874512399",
+//   "amount": 75000,
+//   "phone": "255756789123",
+//   "status": "SUCCESS",
+//   "provider": "TIGO_PESA"
+// }
+// {
+//   "referenceNumber": "APP-2026-3-7EDAC127",
+//   "transactionId": "MPESA-839201",
+//   "amount": 0,
+//   "signature": "VALID-MPESA-SIGNATURE",
+//   "phone": "255789456123",
+//   "status": "SUCCESS",
+//   "provider": "MPESA"
 // }
