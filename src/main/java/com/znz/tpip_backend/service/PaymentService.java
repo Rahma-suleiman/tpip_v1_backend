@@ -53,33 +53,6 @@ public class PaymentService {
         return modelMapper.map(saved, PaymentDTO.class);
     }
 
-
-    // public PaymentDTO confirmPayment(String referenceNumber, String transactionId) {
-
-    //     Payment payment = paymentRepository.findByReferenceNumber(referenceNumber)
-    //             .orElseThrow(() -> new RuntimeException("Payment not found"));
-
-    //     if (payment.getStatus() == PaymentStatus.PAID) {
-    //         throw new RuntimeException("Payment already confirmed");
-    //     }
-
-    //     payment.setTransactionId(transactionId);
-    //     payment.setStatus(PaymentStatus.PAID);
-    //     payment.setPaidAt(LocalDateTime.now());
-    //     payment.setUpdatedAt(LocalDateTime.now());
-
-    //     Payment saved = paymentRepository.save(payment);
-
-    //     Application app = saved.getApplication();
-
-    //     eventPublisher.publish(
-    //             app.getId(),
-    //             app.getApplicant().getId(),
-    //             app.getCurrentStep());
-
-    //     return modelMapper.map(saved, PaymentDTO.class);
-    // }
-
     public PaymentDTO getPaymentStatus(String ref) {
         return modelMapper.map(
                 paymentRepository.findByReferenceNumber(ref)
@@ -94,6 +67,18 @@ public class PaymentService {
                 .toList();
     }
 }
+// REAL PAYMENT FLOW (IMPORTANT)
+
+// Correct architecture:
+
+// 1. initiatePayment()
+//    → creates PENDING payment
+//    → sends user to pay (MPESA/TIGO)
+
+// 2. WEBHOOK (confirmPayment / PaymentProcessingService)
+//    → TRUSTED source
+//    → marks PAID
+//    → triggers application step → SUBMISSION
 // {
 // "amount": 50000,
 // "currency": "TZS",
@@ -103,6 +88,26 @@ public class PaymentService {
 // "payerPhone": "255712345678",
 // "payerName": "Amina Hassan",
 // "feeWaived": false
+// }
+// {
+//   "amount": 75000,
+//   "currency": "TZS",
+//   "channel": "TIGO_PESA",
+//   "method": "MOBILE_MONEY",
+//   "applicationId": 2,
+//   "payerPhone": "255756789123",
+//   "payerName": "Mohamed Juma",
+//   "feeWaived": false
+// }
+// {
+//   "amount": 0,
+//   "currency": "TZS",
+//   "channel": "BANK_TRANSFER",
+//   "method": "BANK_TRANSFER",
+//   "applicationId": 3,
+//   "payerPhone": "255789456123",
+//   "payerName": "Fatma Said",
+//   "feeWaived": true
 // }
 // Real MPESA Daraja API integration
 // ✔ 

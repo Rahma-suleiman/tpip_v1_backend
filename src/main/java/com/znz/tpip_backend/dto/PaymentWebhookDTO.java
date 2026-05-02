@@ -1,12 +1,21 @@
-// package com.znz.tpip_backend.dto;
+package com.znz.tpip_backend.dto;
 
-// import lombok.Data;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.Data;
 
-// @Data
-// public class PaymentWebhookDTO {
+@Data
+public class PaymentWebhookDTO {
 
-//     private String referenceNumber;
-//     private String transactionId;
-//     private Double amount;
-//     private String signature;
-// }
+    // ===== REQUIRED FROM GATEWAY =====
+    private String referenceNumber;
+    private String transactionId;
+    private Double amount;
+
+    // ===== SECURITY =====
+    private String signature;
+
+    // ===== OPTIONAL METADATA (real gateways send this) =====
+    private String phone;
+    private String status; // SUCCESS / FAILED
+    private String provider; // MPESA / TIGO
+}
