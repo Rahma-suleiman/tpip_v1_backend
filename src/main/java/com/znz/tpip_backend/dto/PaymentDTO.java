@@ -2,6 +2,7 @@ package com.znz.tpip_backend.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.znz.tpip_backend.enums.PaymentChannel;
+import com.znz.tpip_backend.enums.PaymentMethod;
 import com.znz.tpip_backend.enums.PaymentStatus;
 import lombok.Data;
 
@@ -32,6 +33,8 @@ public class PaymentDTO {
     private LocalDateTime updatedAt;
 
     private PaymentChannel channel;
+
+    private PaymentMethod method;
 
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private PaymentStatus status;

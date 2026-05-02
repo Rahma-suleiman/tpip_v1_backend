@@ -3,13 +3,10 @@ package com.znz.tpip_backend.controller;
 import com.znz.tpip_backend.dto.PaymentDTO;
 import com.znz.tpip_backend.service.PaymentService;
 import lombok.RequiredArgsConstructor;
-
-import java.util.List;
-
-// import org.hibernate.mapping.List;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/payments")
@@ -20,53 +17,66 @@ public class PaymentController {
 
     // ================= INITIATE PAYMENT =================
     @PostMapping("/initiate")
-    public ResponseEntity<?> initiatePayment(@RequestBody PaymentDTO dto) {
-        try {
-            PaymentDTO response = paymentService.initiatePayment(dto);
-            return ResponseEntity.status(HttpStatus.CREATED).body(response);
-        } catch (RuntimeException ex) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(ex.getMessage());
-        }
+    public ResponseEntity<PaymentDTO> initiatePayment(
+            @RequestBody PaymentDTO dto) {
+
+        PaymentDTO response = paymentService.initiatePayment(dto);
+
+        return ResponseEntity.ok(response);
     }
 
-    // ================= CONFIRM PAYMENT (WEBHOOK) =================
+    // ================= CONFIRM PAYMENT (WEBHOOK SIMULATION) =================
     @PostMapping("/confirm")
-    public ResponseEntity<?> confirmPayment(
+    public ResponseEntity<PaymentDTO> confirmPayment(
             @RequestParam String referenceNumber,
             @RequestParam String transactionId) {
-        try {
-            PaymentDTO response = paymentService.confirmPayment(referenceNumber, transactionId);
-            return ResponseEntity.ok(response);
-        } catch (RuntimeException ex) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(ex.getMessage());
-        }
+
+        PaymentDTO response =
+                paymentService.confirmPayment(referenceNumber, transactionId);
+
+        return ResponseEntity.ok(response);
     }
 
-    // ================= CHECK PAYMENT STATUS =================
-    @GetMapping("/status/{referenceNumber}")
-    public ResponseEntity<?> getPaymentStatus(@PathVariable String referenceNumber) {
-        try {
-            PaymentDTO response = paymentService.getPaymentStatus(referenceNumber);
-            return ResponseEntity.ok(response);
-        } catch (RuntimeException ex) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(ex.getMessage());
-        }
+    // ================= FAIL PAYMENT =================
+    @PostMapping("/fail")
+    public ResponseEntity<PaymentDTO> failPayment(
+            @RequestParam String referenceNumber) {
+
+        PaymentDTO response =
+                paymentService.failPayment(referenceNumber);
+
+        return ResponseEntity.ok(response);
     }
 
-    // ================= GET ALL PAYMENTS =================
+    // ================= CANCEL PAYMENT =================
+    @PostMapping("/cancel")
+    public ResponseEntity<PaymentDTO> cancelPayment(
+            @RequestParam String referenceNumber) {
+
+        PaymentDTO response =
+                paymentService.cancelPayment(referenceNumber);
+
+        return ResponseEntity.ok(response);
+    }
+
+    // ================= GET PAYMENT STATUS =================
+    @GetMapping("/status")
+    public ResponseEntity<PaymentDTO> getStatus(
+            @RequestParam String referenceNumber) {
+
+        PaymentDTO response =
+                paymentService.getPaymentStatus(referenceNumber);
+
+        return ResponseEntity.ok(response);
+    }
+
+    // ================= ADMIN: GET ALL PAYMENTS =================
     @GetMapping
-    public ResponseEntity<?> getAllPayments() {
-        try {
-            List<PaymentDTO> response = paymentService.getAllPayments();
-            return ResponseEntity.ok(response);
-        } catch (Exception ex) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Failed to fetch payments");
-        }
-    }
+    public ResponseEntity<List<PaymentDTO>> getAllPayments() {
 
-    
+        List<PaymentDTO> response =
+                paymentService.getAllPayments();
+
+        return ResponseEntity.ok(response);
+    }
 }

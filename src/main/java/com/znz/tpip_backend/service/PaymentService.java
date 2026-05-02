@@ -28,21 +28,36 @@ public class PaymentService {
         Application app = applicationRepository.findById(dto.getApplicationId())
                 .orElseThrow(() -> new RuntimeException("Application not found"));
 
-        Payment payment = modelMapper.map(dto, Payment.class);
+        // 🚨 IMPORTANT: prevent duplicate payment for same application (1:1 rule)
+        paymentRepository.findByApplicationId(app.getId())
+                .ifPresent(p -> {
+                    throw new IllegalStateException("Payment already exists for this application");
+                });
+
+        Payment payment = new Payment();
 
         payment.setApplication(app);
-        payment.setCurrency("TZS");
+        payment.setAmount(dto.getAmount());
+        payment.setCurrency(dto.getCurrency() != null ? dto.getCurrency() : "TZS");
+
+        payment.setChannel(dto.getChannel());
+        payment.setMethod(dto.getMethod());
+
         payment.setStatus(PaymentStatus.PENDING);
         payment.setReferenceNumber(app.getIndexNumber());
         payment.setInitiatedAt(LocalDateTime.now());
 
+        payment.setPayerPhone(dto.getPayerPhone());
+        payment.setPayerName(dto.getPayerName());
+
         Payment saved = paymentRepository.save(payment);
 
-        // EVENT TRIGGER
+        // 🔥 EVENT TRIGGER
         eventPublisher.publish(
                 app.getId(),
                 app.getApplicant().getId(),
-                app.getCurrentStep());
+                app.getCurrentStep()
+        );
 
         return modelMapper.map(saved, PaymentDTO.class);
     }
@@ -53,6 +68,11 @@ public class PaymentService {
         Payment payment = paymentRepository.findByReferenceNumber(referenceNumber)
                 .orElseThrow(() -> new RuntimeException("Payment not found"));
 
+        // 🚨 prevent double confirmation
+        if (payment.getStatus() == PaymentStatus.PAID) {
+            throw new IllegalStateException("Payment already confirmed");
+        }
+
         payment.setTransactionId(transactionId);
         payment.setStatus(PaymentStatus.PAID);
         payment.setPaidAt(LocalDateTime.now());
@@ -62,15 +82,41 @@ public class PaymentService {
 
         Application app = saved.getApplication();
 
-        // EVENT TRIGGER
+        // 🔥 EVENT TRIGGER → moves to SUBMISSION step
         eventPublisher.publish(
                 app.getId(),
                 app.getApplicant().getId(),
-                app.getCurrentStep());
+                app.getCurrentStep()
+        );
 
         return modelMapper.map(saved, PaymentDTO.class);
     }
 
+    // ================= FAIL PAYMENT =================
+    public PaymentDTO failPayment(String referenceNumber) {
+
+        Payment payment = paymentRepository.findByReferenceNumber(referenceNumber)
+                .orElseThrow(() -> new RuntimeException("Payment not found"));
+
+        payment.setStatus(PaymentStatus.FAILED);
+        payment.setUpdatedAt(LocalDateTime.now());
+
+        return modelMapper.map(paymentRepository.save(payment), PaymentDTO.class);
+    }
+
+    // ================= CANCEL PAYMENT =================
+    public PaymentDTO cancelPayment(String referenceNumber) {
+
+        Payment payment = paymentRepository.findByReferenceNumber(referenceNumber)
+                .orElseThrow(() -> new RuntimeException("Payment not found"));
+
+        payment.setStatus(PaymentStatus.CANCELLED);
+        payment.setUpdatedAt(LocalDateTime.now());
+
+        return modelMapper.map(paymentRepository.save(payment), PaymentDTO.class);
+    }
+
+    // ================= GET STATUS =================
     public PaymentDTO getPaymentStatus(String referenceNumber) {
 
         Payment payment = paymentRepository.findByReferenceNumber(referenceNumber)
@@ -79,50 +125,12 @@ public class PaymentService {
         return modelMapper.map(payment, PaymentDTO.class);
     }
 
+    // ================= ADMIN: ALL PAYMENTS =================
     public List<PaymentDTO> getAllPayments() {
 
-        List<Payment> payments = paymentRepository.findAll();
-
-        return payments.stream()
-                .map(payment -> modelMapper.map(payment, PaymentDTO.class))
+        return paymentRepository.findAll()
+                .stream()
+                .map(p -> modelMapper.map(p, PaymentDTO.class))
                 .toList();
     }
 }
-
-// {
-//   "amount": 50000,
-//   "currency": "TZS",
-//   "channel": "MPESA",
-//   "method": "MOBILE_MONEY",
-//   "applicationId": 1,
-//   "payerPhone": "255712345678",
-//   "payerName": "Rahma Suleiman"
-// }
-// {
-//   "amount": 75000,
-//   "currency": "TZS",
-//   "channel": "TIGO_PESA",
-//   "method": "MOBILE_MONEY",
-//   "applicationId": 2,
-//   "payerPhone": "255713987654",
-//   "payerName": "Ali Hassan"
-// }
-// {
-//   "amount": 100000,
-//   "currency": "TZS",
-//   "channel": "BANK_TRANSFER",
-//   "method": "BANK_TRANSFER",
-//   "applicationId": 3,
-//   "payerPhone": "255715112233",
-//   "payerName": "Neema Joseph"
-// }
-
-
-// Step 7: Admin Review + Decision System (ACCEPT / REJECT / INTERVIEW)
-// Or 
-// Payment Gateway Integration (M-Pesa simulation)
-// Auto receipt PDF generator 
-
-// “Step 8 Interview system”
-// or
-// “Build scoring engine for applicants”

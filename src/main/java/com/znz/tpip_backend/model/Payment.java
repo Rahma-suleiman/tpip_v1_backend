@@ -5,6 +5,7 @@ import lombok.*;
 import java.time.LocalDateTime;
 
 import com.znz.tpip_backend.enums.PaymentChannel;
+import com.znz.tpip_backend.enums.PaymentMethod;
 import com.znz.tpip_backend.enums.PaymentStatus;
 
 @Getter
@@ -28,9 +29,13 @@ public class Payment {
     private LocalDateTime paidAt;
     private LocalDateTime updatedAt;
 
+
     // ================= PAYMENT METHOD =================
     @Enumerated(EnumType.STRING)
-    private PaymentChannel channel;
+    private PaymentMethod method; //Type of payment (Mobile, Bank, Card)
+
+    @Enumerated(EnumType.STRING)
+    private PaymentChannel channel; //Specific provider (MPESA, TIGO, etc.)
 
     @Enumerated(EnumType.STRING)
     private PaymentStatus status = PaymentStatus.PENDING;
