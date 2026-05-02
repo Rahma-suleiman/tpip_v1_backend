@@ -15,7 +15,7 @@ public class ApplicationDTO {
     private Long id;
 
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
-    private String indexNumber;
+    private String applicationIndexNumber;
 
     private Integer currentStep;
 

@@ -1,5 +1,7 @@
 package com.znz.tpip_backend.controller;
 
+import java.util.List;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -19,69 +21,70 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class ApplicationController {
 
-    private final ApplicationService applicationService;
-    private final UserRepository userRepository;
+        private final ApplicationService applicationService;
+        private final UserRepository userRepository;
 
-    // ================= START APPLICATION =================
-    @GetMapping("/start")
-    public ResponseEntity<ApplicationDTO> startApplication(@RequestParam Long userId) {
+        // ================= START APPLICATION =================
+        @GetMapping("/start")
+        public ResponseEntity<ApplicationDTO> startApplication(@RequestParam Long userId) {
 
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                User user = userRepository.findById(userId)
+                                .orElseThrow(() -> new RuntimeException("User not found"));
 
-        Applicant applicant = user.getApplicant();
+                Applicant applicant = user.getApplicant();
 
-        return ResponseEntity.ok(
-                applicationService.createOrGetApplication(applicant.getId())
-        );
-    }
+                return ResponseEntity.ok(
+                                applicationService.createOrGetApplication(applicant.getId()));
+        }
 
-    // ================= GET FULL APPLICATION =================
-    @GetMapping("/{id}")
-    public ResponseEntity<ApplicationDTO> getApplication(@PathVariable Long id) {
+        @GetMapping
+        public ResponseEntity<List<ApplicationDTO>> getAllApplications() {
 
-        return ResponseEntity.ok(
-                applicationService.getApplicationDTO(id)
-        );
-    }
+                return ResponseEntity.ok(
+                                applicationService.getAllApplications());
+        }
 
-    // ================= MOVE STEP =================
-    @PutMapping("/{id}/step")
-    public ResponseEntity<ApplicationDTO> moveStep(
-            @PathVariable Long id,
-            @RequestParam ApplicationStep step) {
+        // ================= GET FULL APPLICATION =================
+        @GetMapping("/details/{id}")
+        public ResponseEntity<ApplicationDTO> getApplication(@PathVariable Long id) {
 
-        return ResponseEntity.ok(
-                applicationService.moveToStep(id, step)
-        );
-    }
+                return ResponseEntity.ok(
+                                applicationService.getApplicationById(id));
+        }
 
-    // ================= SUBMIT APPLICATION =================
-    @PostMapping("/{id}/submit")
-    public ResponseEntity<ApplicationDTO> submit(@PathVariable Long id) {
+        // ================= MOVE STEP =================
+        @PutMapping("/{id}/step")
+        public ResponseEntity<ApplicationDTO> moveStep(
+                        @PathVariable Long id,
+                        @RequestParam ApplicationStep step) {
 
-        return ResponseEntity.ok(
-                applicationService.submitApplication(id)
-        );
-    }
+                return ResponseEntity.ok(
+                                applicationService.moveToStep(id, step));
+        }
 
-    // ================= UPDATE STATUS (ADMIN) =================
-    @PutMapping("/{id}/status")
-    public ResponseEntity<ApplicationDTO> updateStatus(
-            @PathVariable Long id,
-            @RequestParam ApplicationStatus status) {
+        // ================= SUBMIT APPLICATION =================
+        @PostMapping("/{id}/submit")
+        public ResponseEntity<ApplicationDTO> submit(@PathVariable Long id) {
 
-        return ResponseEntity.ok(
-                applicationService.updateStatus(id, status)
-        );
-    }
+                return ResponseEntity.ok(
+                                applicationService.submitApplication(id));
+        }
 
-    // ================= CURRENT STEP / PROGRESS =================
-    @GetMapping("/{id}/current-step")
-    public ResponseEntity<ApplicationProgressDto> getCurrentStep(@PathVariable Long id) {
+        // ================= UPDATE STATUS (ADMIN) =================
+        @PutMapping("/{id}/status")
+        public ResponseEntity<ApplicationDTO> updateStatus(
+                        @PathVariable Long id,
+                        @RequestParam ApplicationStatus status) {
 
-        return ResponseEntity.ok(
-                applicationService.getCurrentStep(id)
-        );
-    }
+                return ResponseEntity.ok(
+                                applicationService.updateStatus(id, status));
+        }
+
+        // ================= CURRENT STEP / PROGRESS =================
+        @GetMapping("/{id}/current-step")
+        public ResponseEntity<ApplicationProgressDto> getCurrentStep(@PathVariable Long id) {
+
+                return ResponseEntity.ok(
+                                applicationService.getCurrentStep(id));
+        }
 }

@@ -47,7 +47,7 @@ public class Application {
     private Long id;
 
     @Column(unique = true)
-    private String indexNumber;
+    private String applicationIndexNumber;
 
     // Step tracking (important for wizard)
     @Enumerated(EnumType.STRING)

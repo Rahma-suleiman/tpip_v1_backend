@@ -25,39 +25,38 @@ public class PaymentController {
         return ResponseEntity.ok(response);
     }
 
-    // ================= CONFIRM PAYMENT (WEBHOOK SIMULATION) =================
-    @PostMapping("/confirm")
-    public ResponseEntity<PaymentDTO> confirmPayment(
-            @RequestParam String referenceNumber,
-            @RequestParam String transactionId) {
+    // // ================= CONFIRM PAYMENT (WEBHOOK SIMULATION) =================
+    // @PostMapping("/confirm")
+    // public ResponseEntity<PaymentDTO> confirmPayment(
+    //         @RequestParam String referenceNumber,
+    //         @RequestParam String transactionId) {
 
-        PaymentDTO response =
-                paymentService.confirmPayment(referenceNumber, transactionId);
+    //     PaymentDTO response = paymentService.confirmPayment(referenceNumber, transactionId);
 
-        return ResponseEntity.ok(response);
-    }
+    //     return ResponseEntity.ok(response);
+    // }
 
-    // ================= FAIL PAYMENT =================
-    @PostMapping("/fail")
-    public ResponseEntity<PaymentDTO> failPayment(
-            @RequestParam String referenceNumber) {
+    // // ================= FAIL PAYMENT =================
+    // @PostMapping("/fail")
+    // public ResponseEntity<PaymentDTO> failPayment(
+    //         @RequestParam String referenceNumber) {
 
-        PaymentDTO response =
-                paymentService.failPayment(referenceNumber);
+    //     PaymentDTO response =
+    //             paymentService.failPayment(referenceNumber);
 
-        return ResponseEntity.ok(response);
-    }
+    //     return ResponseEntity.ok(response);
+    // }
 
-    // ================= CANCEL PAYMENT =================
-    @PostMapping("/cancel")
-    public ResponseEntity<PaymentDTO> cancelPayment(
-            @RequestParam String referenceNumber) {
+    // // ================= CANCEL PAYMENT =================
+    // @PostMapping("/cancel")
+    // public ResponseEntity<PaymentDTO> cancelPayment(
+    //         @RequestParam String referenceNumber) {
 
-        PaymentDTO response =
-                paymentService.cancelPayment(referenceNumber);
+    //     PaymentDTO response =
+    //             paymentService.cancelPayment(referenceNumber);
 
-        return ResponseEntity.ok(response);
-    }
+    //     return ResponseEntity.ok(response);
+    // }
 
     // ================= GET PAYMENT STATUS =================
     @GetMapping("/status")

@@ -29,9 +29,16 @@ public class ApplicationService {
     private final ApplicationRepository applicationRepository;
     private final IntakeRepository intakeRepository;
 
-    public ApplicationDTO getApplicationDTO(Long applicationId) {
+    public List<ApplicationDTO> getAllApplications() {
+        return applicationRepository.findAll()
+                .stream()
+                .map(this::mapToDTO)
+                .toList();
+    }
 
-        Application app = getApplication(applicationId);
+    public ApplicationDTO getApplicationById(Long id) {
+        Application app = applicationRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Application not found"));
 
         return mapToDTO(app);
     }
@@ -57,7 +64,7 @@ public class ApplicationService {
                     newApp.setStatus(ApplicationStatus.DRAFT);
                     newApp.setCurrentStep(ApplicationStep.PERSONAL_INFO);
                     newApp.setLocked(false);
-                    newApp.setIndexNumber(generateApplicationIndex(activeIntake));
+                    newApp.setApplicationIndexNumber(generateApplicationIndex(activeIntake));
 
                     return applicationRepository.save(newApp);
                 });
@@ -66,7 +73,7 @@ public class ApplicationService {
     }
 
     // ================= MOVE STEP =================
-     public ApplicationDTO moveToStep(Long applicationId, ApplicationStep nextStep) {
+    public ApplicationDTO moveToStep(Long applicationId, ApplicationStep nextStep) {
 
         Application app = getApplication(applicationId);
 
@@ -84,7 +91,7 @@ public class ApplicationService {
     }
 
     // ================= SUBMIT =================
-       public ApplicationDTO submitApplication(Long applicationId) {
+    public ApplicationDTO submitApplication(Long applicationId) {
 
         Application app = getApplication(applicationId);
 
@@ -368,7 +375,7 @@ public class ApplicationService {
         ApplicationDTO dto = new ApplicationDTO();
 
         dto.setId(app.getId());
-        dto.setIndexNumber(app.getIndexNumber());
+        dto.setApplicationIndexNumber(app.getApplicationIndexNumber());
 
         dto.setCurrentStep(app.getCurrentStep().getOrder());
         dto.setStatus(app.getStatus());

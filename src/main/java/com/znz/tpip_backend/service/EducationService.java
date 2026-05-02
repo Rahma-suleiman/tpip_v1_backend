@@ -45,9 +45,14 @@ public class EducationService {
         // ✅ EVENT
         // eventPublisher.publish(app.getId(),
         // applicant.getId(),ApplicationStep.EDUCATION);
-        if (app.getCurrentStep() == ApplicationStep.EDUCATION) {
-            eventPublisher.publish(app.getId(), applicant.getId(), ApplicationStep.EDUCATION);
-        }
+        eventPublisher.publish(
+                app.getId(),
+                applicant.getId(),
+                ApplicationStep.EDUCATION);
+        // if (app.getCurrentStep() == ApplicationStep.EDUCATION) {
+        // eventPublisher.publish(app.getId(), applicant.getId(),
+        // ApplicationStep.EDUCATION);
+        // }
         return mapToDto(saved);
     }
 
@@ -68,11 +73,10 @@ public class EducationService {
         Application app = getApplication(education.getApplicant().getId());
 
         // ✅ EVENT
-        // eventPublisher.publish(app.getId(), education.getApplicant().getId(),
-        // ApplicationStep.EDUCATION);
-        if (app.getCurrentStep() == ApplicationStep.EDUCATION) {
-            eventPublisher.publish(app.getId(), education.getApplicant().getId(), ApplicationStep.EDUCATION);
-        }
+        eventPublisher.publish(app.getId(), education.getApplicant().getId(),ApplicationStep.EDUCATION);
+        // if (app.getCurrentStep() == ApplicationStep.EDUCATION) {
+        //     eventPublisher.publish(app.getId(), education.getApplicant().getId(), ApplicationStep.EDUCATION);
+        // }
         return mapToDto(saved);
     }
 
@@ -98,10 +102,10 @@ public class EducationService {
         Application app = getApplication(applicantId);
 
         // ✅ EVENT (important)
-        // eventPublisher.publish(app.getId(), applicantId, ApplicationStep.EDUCATION);
-        if (app.getCurrentStep() == ApplicationStep.EDUCATION) {
-            eventPublisher.publish(app.getId(), applicantId, ApplicationStep.EDUCATION);
-        }
+        eventPublisher.publish(app.getId(), applicantId, ApplicationStep.EDUCATION);
+        // if (app.getCurrentStep() == ApplicationStep.EDUCATION) {
+        //     eventPublisher.publish(app.getId(), applicantId, ApplicationStep.EDUCATION);
+        // }
     }
 
     // ================= APPLICATION FETCH =================
@@ -146,15 +150,15 @@ public class EducationService {
             case PHD:
 
                 if (dto.getProgrammeName() == null || dto.getProgrammeName().isBlank()) {
-                    throw new RuntimeException(dto.getLevel() + " requires programme name");
+                    throw new IllegalStateException(dto.getLevel() + " requires programme name");
                 }
 
                 if (isBlank(dto.getGpa()) && isBlank(dto.getClassification())) {
-                    throw new RuntimeException(dto.getLevel() + " requires GPA or classification");
+                    throw new IllegalStateException(dto.getLevel() + " requires GPA or classification");
                 }
 
                 if (dto.getSubjects() != null && !dto.getSubjects().isEmpty()) {
-                    throw new RuntimeException(dto.getLevel() + " should not have subjects");
+                    throw new IllegalStateException(dto.getLevel() + " should not have subjects");
                 }
                 break;
 
@@ -265,6 +269,7 @@ public class EducationService {
 // { "subjectName": "Chemistry", "grade": "B+" }
 // ]
 // }
+
 // {
 // "level": "DIPLOMA",
 // "institutionName": "State University of Zanzibar (SUZA)",
@@ -272,8 +277,7 @@ public class EducationService {
 // "completionYear": 2023,
 // "gpa": "3.9",
 // "classification": "FIRST",
-// "description": "Diploma in Information Technology - Software and Systems
-// Track",
+// "description": "Diploma in Information Technology - Software and Systems Track",
 // "applicantId": 3,
 // "subjects": []
 // }

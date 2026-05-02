@@ -19,7 +19,7 @@ public class ProgrammeChoice extends AuditModel<String> {
     // Preference rank = order of priority chosen by the applicant
     // It tells the system:“Which programme do I want MOST, second, and third?”
     @Column(nullable = false)
-    private Integer preferenceRank; // 1, 2, 3
+    private Integer preferenceRank; // 1, 2, 3(order of preference)
 
     private Integer matchScore;
 

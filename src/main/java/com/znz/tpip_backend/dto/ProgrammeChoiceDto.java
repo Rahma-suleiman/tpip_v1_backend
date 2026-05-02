@@ -10,7 +10,7 @@ public class ProgrammeChoiceDto {
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private Long id;
 
-    private Integer preferenceRank;
+    private Integer preferenceRank; 
 
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private Integer matchScore;
