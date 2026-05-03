@@ -5,6 +5,8 @@ import com.znz.tpip_backend.enums.PaymentStatus;
 import com.znz.tpip_backend.model.Application;
 import com.znz.tpip_backend.model.Payment;
 import com.znz.tpip_backend.repository.*;
+import com.znz.tpip_backend.service.configDrivenApplicationSteps.ApplicationEventPublisherService;
+
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
@@ -123,7 +125,16 @@ public class PaymentService {
 //   "payerName": "Fatma Said",
 //   "feeWaived": true
 // }
-
+// {
+//   "amount": 50000,
+//   "currency": "TZS",
+//   "channel": "MPESA",
+//   "method": "MOBILE_MONEY",
+//   "applicationId": 4,
+//   "payerPhone": "0789123456",
+//   "payerName": "Rahma Suleiman",
+//   "feeWaived": false
+// }
 // Real MPESA Daraja API integration
 // ✔ 
 // Real Tigo Pesa API flow
@@ -147,3 +158,5 @@ public class PaymentService {
 // REJECT  → applicant must pay normally
 //         ↓
 // Audit log + event-driven step update
+
+// now lets proceed with this"Step 7 Admin Review system (ACCEPT/REJECT/INTERVIEW)"

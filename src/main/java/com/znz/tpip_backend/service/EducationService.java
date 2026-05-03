@@ -2,8 +2,10 @@ package com.znz.tpip_backend.service;
 
 import com.znz.tpip_backend.dto.*;
 import com.znz.tpip_backend.enums.ApplicationStep;
+import com.znz.tpip_backend.enums.EducationLevel;
 import com.znz.tpip_backend.model.*;
 import com.znz.tpip_backend.repository.*;
+import com.znz.tpip_backend.service.configDrivenApplicationSteps.ApplicationEventPublisherService;
 
 import lombok.RequiredArgsConstructor;
 
@@ -21,7 +23,7 @@ public class EducationService {
     private final EducationRepository educationRepository;
     private final ApplicantRepository applicantRepository;
     private final ApplicationRepository applicationRepository;
-    // private final ApplicationWorkflowService workflowService;
+
     private final ApplicationEventPublisherService eventPublisher;
     private final ModelMapper modelMapper;
 
@@ -57,27 +59,86 @@ public class EducationService {
     }
 
     // ================= UPDATE =================
-    public EducationDto update(Long id, EducationDto dto) {
-
-        validateEducation(dto);
+      public EducationDto update(Long id, EducationDto dto) {
 
         Education education = educationRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Not found"));
-
-        modelMapper.map(dto, education);
-
-        mapSubjects(dto, education);
-
-        Education saved = educationRepository.save(education);
+                .orElseThrow(() -> new RuntimeException("Education not found"));
 
         Application app = getApplication(education.getApplicant().getId());
 
-        // ✅ EVENT
-        eventPublisher.publish(app.getId(), education.getApplicant().getId(),ApplicationStep.EDUCATION);
-        // if (app.getCurrentStep() == ApplicationStep.EDUCATION) {
-        //     eventPublisher.publish(app.getId(), education.getApplicant().getId(), ApplicationStep.EDUCATION);
-        // }
+        // ================= LOCK CHECK (IMPORTANT) =================
+        if (app.isLocked()) {
+            throw new RuntimeException("Application is locked. Updates are not allowed.");
+        }
+
+        // ================= PARTIAL UPDATE (PATCH BEHAVIOR) =================
+        if (dto.getLevel() != null) {
+            education.setLevel(dto.getLevel());
+        }
+
+        if (dto.getInstitutionName() != null) {
+            education.setInstitutionName(dto.getInstitutionName());
+        }
+
+        if (dto.getProgrammeName() != null) {
+            education.setProgrammeName(dto.getProgrammeName());
+        }
+
+        if (dto.getCompletionYear() != null) {
+            education.setCompletionYear(dto.getCompletionYear());
+        }
+
+        if (dto.getGpa() != null) {
+            education.setGpa(dto.getGpa());
+        }
+
+        if (dto.getClassification() != null) {
+            education.setClassification(dto.getClassification());
+        }
+
+        // subjects only if provided
+        if (dto.getSubjects() != null) {
+            mapSubjects(dto, education);
+        }
+
+        // ================= VALIDATION AFTER MERGE =================
+        validateEducationForUpdate(education);
+
+        Education saved = educationRepository.save(education);
+
+        Application app2 = getApplication(education.getApplicant().getId());
+
+        // ================= EVENT TRIGGER =================
+        eventPublisher.publish(
+                app2.getId(),
+                education.getApplicant().getId(),
+                ApplicationStep.EDUCATION);
+
         return mapToDto(saved);
+    }
+
+    private void validateEducationForUpdate(Education education) {
+
+        if (education.getLevel() == null) {
+            throw new RuntimeException("Education level is required");
+        }
+
+        if (education.getInstitutionName() == null || education.getInstitutionName().isBlank()) {
+            throw new RuntimeException("Institution name is required");
+        }
+
+        if (education.getCompletionYear() == null) {
+            throw new RuntimeException("Completion year is required");
+        }
+
+        // RULE: O/A Level must have subjects IF subjects exist
+        if ((education.getLevel() == EducationLevel.O_LEVEL ||
+                education.getLevel() == EducationLevel.A_LEVEL)) {
+
+            if (education.getSubjects() != null && education.getSubjects().isEmpty()) {
+                throw new RuntimeException("At least one subject is required");
+            }
+        }
     }
 
     // ================= GET =================
@@ -101,10 +162,10 @@ public class EducationService {
 
         Application app = getApplication(applicantId);
 
-        // ✅ EVENT (important)
+        // EVENT (important)
         eventPublisher.publish(app.getId(), applicantId, ApplicationStep.EDUCATION);
         // if (app.getCurrentStep() == ApplicationStep.EDUCATION) {
-        //     eventPublisher.publish(app.getId(), applicantId, ApplicationStep.EDUCATION);
+        // eventPublisher.publish(app.getId(), applicantId, ApplicationStep.EDUCATION);
         // }
     }
 
@@ -277,7 +338,19 @@ public class EducationService {
 // "completionYear": 2023,
 // "gpa": "3.9",
 // "classification": "FIRST",
-// "description": "Diploma in Information Technology - Software and Systems Track",
+// "description": "Diploma in Information Technology - Software and Systems
+// Track",
 // "applicantId": 3,
+// "subjects": []
+// }
+// {
+// "level": "MASTERS",
+// "institutionName": "State University of Zanzibar (SUZA)",
+// "programmeName": "Information Technology",
+// "completionYear": 2025,
+// "gpa": "4.2",
+// "classification": "DISTINCTION",
+// "description": "Master of Science in Information Technology",
+// "applicantId": 4,
 // "subjects": []
 // }

@@ -5,6 +5,7 @@ import com.znz.tpip_backend.enums.ApplicationStep;
 import com.znz.tpip_backend.enums.EducationLevel;
 import com.znz.tpip_backend.model.*;
 import com.znz.tpip_backend.repository.*;
+import com.znz.tpip_backend.service.configDrivenApplicationSteps.ApplicationEventPublisherService;
 import com.znz.tpip_backend.validation.ProgrammeChoiceValidator;
 
 import lombok.RequiredArgsConstructor;
@@ -279,4 +280,20 @@ public class ProgrammeChoiceService {
 // "preferenceRank": 3,
 // "applicationId": 3,
 // "programmeId": 2
+// }
+// APPLICANT 4
+// {
+//   "preferenceRank": 1,
+//   "applicationId": 4,
+//   "programmeId": 1
+// }
+// {
+//   "preferenceRank": 2,
+//   "applicationId": 4,
+//   "programmeId": 2
+// }
+// {
+//   "preferenceRank": 3,
+//   "applicationId": 4,
+//   "programmeId": 5
 // }

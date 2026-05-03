@@ -111,6 +111,15 @@ public class AuthService {
 //     "password": "Fatma@789",
 //     "indexNumber": "S9101/003/2021"
 //   }
+// {
+//   "firstName": "Rahma",
+//   "middleName": "Suleiman",
+//   "lastName": "Rahma",
+//   "email": "rahma.suleiman@gmail.com",
+//   "mobileNumber": "0712345678",
+//   "password": "123456",
+//   "indexNumber": "S1234-0456-2020"
+// }
 // LOGIN 
 //   {
 //     "email": "amina@gmail.com",
@@ -124,3 +133,7 @@ public class AuthService {
 //     "email": "fatma@gmail.com",
 //     "password": "Fatma@789"
 //   }
+// {
+//   "email": "rahma.suleiman@gmail.com",
+//   "password": "123456"
+// }

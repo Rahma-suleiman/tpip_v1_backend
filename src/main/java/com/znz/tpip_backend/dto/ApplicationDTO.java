@@ -6,6 +6,7 @@ import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.znz.tpip_backend.enums.ApplicationStatus;
+import com.znz.tpip_backend.enums.ApplicationStep;
 import com.znz.tpip_backend.enums.PaymentStatus;
 
 @Data
@@ -17,7 +18,7 @@ public class ApplicationDTO {
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private String applicationIndexNumber;
 
-    private Integer currentStep;
+    private ApplicationStep currentStep;
 
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private ApplicationStatus status;

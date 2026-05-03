@@ -1,11 +1,14 @@
+
 // package com.znz.tpip_backend.service;
 
+// import com.znz.tpip_backend.dto.PaymentWebhookDTO;
 // import com.znz.tpip_backend.enums.ApplicationStep;
 // import com.znz.tpip_backend.enums.PaymentStatus;
 // import com.znz.tpip_backend.model.Application;
 // import com.znz.tpip_backend.model.Payment;
 // import com.znz.tpip_backend.repository.ApplicationRepository;
 // import com.znz.tpip_backend.repository.PaymentRepository;
+// import com.znz.tpip_backend.service.configDrivenApplicationSteps.ApplicationEventPublisherService;
 // import com.znz.tpip_backend.service.security.SignatureService;
 // import lombok.RequiredArgsConstructor;
 // import org.springframework.stereotype.Service;
@@ -17,114 +20,37 @@
 // public class PaymentProcessingService {
 
 //     private final PaymentRepository paymentRepository;
+//     private final ApplicationRepository applicationRepository;
 //     private final SignatureService signatureService;
 //     private final ApplicationEventPublisherService eventPublisher;
 //     private final ReceiptService receiptService;
-//     private final ApplicationRepository applicationRepository;
 
+//     public void process(PaymentWebhookDTO dto) {
 
-//     public void process(String provider, String payload, String signature) {
-
-//         if (!signatureService.verify(payload, signature)) {
+//         // ================= 1. SECURITY =================
+//         if (!signatureService.verify(dto.toString(), dto.getSignature())) {
 //             throw new RuntimeException("Invalid signature");
 //         }
 
-//         String reference = extractReference(payload);
-//         String transactionId = provider + "-" + System.currentTimeMillis();
-
-//         Payment payment = paymentRepository.findByReferenceNumber(reference)
+//         // ================= 2. FIND PAYMENT =================
+//         Payment payment = paymentRepository.findByReferenceNumber(dto.getReferenceNumber())
 //                 .orElseThrow(() -> new RuntimeException("Payment not found"));
 
-//         if (payment.getStatus() == PaymentStatus.PAID)
-//             return;
-
-//         payment.setStatus(PaymentStatus.PAID);
-//         payment.setTransactionId(transactionId);
-//         payment.setPaymentProviderRef(provider);
-//         payment.setPaidAt(LocalDateTime.now());
-//         payment.setUpdatedAt(LocalDateTime.now());
-
-//         Payment saved = paymentRepository.save(payment);
-
-//         // ================= IMPORTANT FIX =================
-//         Application app = saved.getApplication();
-
-//         // 1. UPDATE APPLICATION STEP IN DATABASE
-//         // app.setCurrentStep("SUBMISSION");
-//         app.setCurrentStep(ApplicationStep.SUBMISSION);
-//         applicationRepository.save(app);
-
-//         // 2. GENERATE RECEIPT
-//         receiptService.generateAndSendReceipt(saved);
-
-//         // 3. EVENT (for UI / frontend sync)
-//         eventPublisher.publish(
-//                 app.getId(),
-//                 app.getApplicant().getId(),
-//                 ApplicationStep.SUBMISSION);
-//     }
- 
-//     private String extractReference(String payload) {
-//         return payload.contains("APP-") ? payload.substring(payload.indexOf("APP-"), payload.indexOf("APP-") + 20)
-//                 : "UNKNOWN";
-//     }
-// }
-
-
-// package com.znz.tpip_backend.service;
-
-// import com.znz.tpip_backend.enums.ApplicationStep;
-// import com.znz.tpip_backend.enums.PaymentStatus;
-// import com.znz.tpip_backend.model.Application;
-// import com.znz.tpip_backend.model.Payment;
-// import com.znz.tpip_backend.repository.ApplicationRepository;
-// import com.znz.tpip_backend.repository.PaymentRepository;
-// import com.znz.tpip_backend.service.security.SignatureService;
-// import lombok.RequiredArgsConstructor;
-// import org.springframework.stereotype.Service;
-
-// import java.time.LocalDateTime;
-
-// @Service
-// @RequiredArgsConstructor
-// public class PaymentProcessingService {
-
-//     private final PaymentRepository paymentRepository;
-//     private final SignatureService signatureService;
-//     private final ApplicationEventPublisherService eventPublisher;
-//     private final ReceiptService receiptService;
-//     private final ApplicationRepository applicationRepository;
-
-//     public void process(String provider, String payload, String signature) {
-
-//         // ================= 1. SECURITY CHECK =================
-//         if (!signatureService.verify(payload, signature)) {
-//             throw new RuntimeException("Invalid signature");
-//         }
-
-//         // ================= 2. EXTRACT REFERENCE =================
-//         String reference = extractReference(payload);
-
-//         Payment payment = paymentRepository.findByReferenceNumber(reference)
-//                 .orElseThrow(() -> new RuntimeException("Payment not found"));
-
-//         // ================= 3. IDENTITY CHECK =================
+//         // ================= 3. IDEMPOTENCY =================
 //         if (payment.getStatus() == PaymentStatus.PAID) {
-//             return; // idempotency protection
+//             return;
 //         }
 
 //         // ================= 4. UPDATE PAYMENT =================
-//         String transactionId = provider + "-" + System.currentTimeMillis();
-
 //         payment.setStatus(PaymentStatus.PAID);
-//         payment.setTransactionId(transactionId);
-//         payment.setPaymentProviderRef(provider);
+//         payment.setTransactionId(dto.getTransactionId());
+//         payment.setPaymentProviderRef(dto.getProvider());
 //         payment.setPaidAt(LocalDateTime.now());
 //         payment.setUpdatedAt(LocalDateTime.now());
 
 //         Payment saved = paymentRepository.save(payment);
 
-//         // ================= 5. APPLICATION UPDATE =================
+//         // ================= 5. UPDATE APPLICATION STEP =================
 //         Application app = saved.getApplication();
 
 //         app.setCurrentStep(ApplicationStep.SUBMISSION);
@@ -133,7 +59,7 @@
 //         // ================= 6. RECEIPT =================
 //         receiptService.generateAndSendReceipt(saved);
 
-//         // ================= 7. EVENT SYSTEM =================
+//         // ================= 7. EVENT =================
 //         Long applicantId = (app.getApplicant() != null)
 //                 ? app.getApplicant().getId()
 //                 : null;
@@ -144,29 +70,18 @@
 //                 ApplicationStep.SUBMISSION
 //         );
 //     }
-
-//     // ================= SAFE REFERENCE EXTRACTION =================
-//     private String extractReference(String payload) {
-
-//         // temporary safe fallback (production should parse JSON)
-//         if (payload == null) return "UNKNOWN";
-
-//         int index = payload.indexOf("APP-");
-
-//         if (index == -1) return "UNKNOWN";
-
-//         return payload.substring(index, Math.min(index + 25, payload.length()));
-//     }
 // }
 package com.znz.tpip_backend.service;
 
 import com.znz.tpip_backend.dto.PaymentWebhookDTO;
 import com.znz.tpip_backend.enums.ApplicationStep;
+import com.znz.tpip_backend.enums.PaymentChannel;
 import com.znz.tpip_backend.enums.PaymentStatus;
 import com.znz.tpip_backend.model.Application;
 import com.znz.tpip_backend.model.Payment;
 import com.znz.tpip_backend.repository.ApplicationRepository;
 import com.znz.tpip_backend.repository.PaymentRepository;
+import com.znz.tpip_backend.service.configDrivenApplicationSteps.ApplicationEventPublisherService;
 import com.znz.tpip_backend.service.security.SignatureService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -199,7 +114,33 @@ public class PaymentProcessingService {
             return;
         }
 
-        // ================= 4. UPDATE PAYMENT =================
+        // ================= 4. PROVIDER VALIDATION (FIXED) =================
+        if (payment.getChannel() == null || dto.getProvider() == null) {
+            throw new RuntimeException("Provider missing");
+        }
+
+        PaymentChannel expectedChannel = payment.getChannel();
+        PaymentChannel actualChannel;
+
+        try {
+            actualChannel = PaymentChannel.valueOf(dto.getProvider());
+        } catch (IllegalArgumentException e) {
+            throw new RuntimeException("Invalid provider: " + dto.getProvider());
+        }
+
+        if (expectedChannel != actualChannel) {
+            throw new RuntimeException(
+                    "Provider mismatch! Expected: " + expectedChannel +
+                    " but got: " + actualChannel
+            );
+        }
+
+        // ================= 5. AMOUNT VALIDATION =================
+        if (!payment.getAmount().equals(dto.getAmount())) {
+            throw new RuntimeException("Amount mismatch");
+        }
+
+        // ================= 6. UPDATE PAYMENT =================
         payment.setStatus(PaymentStatus.PAID);
         payment.setTransactionId(dto.getTransactionId());
         payment.setPaymentProviderRef(dto.getProvider());
@@ -208,16 +149,16 @@ public class PaymentProcessingService {
 
         Payment saved = paymentRepository.save(payment);
 
-        // ================= 5. UPDATE APPLICATION STEP =================
+        // ================= 7. UPDATE APPLICATION =================
         Application app = saved.getApplication();
 
         app.setCurrentStep(ApplicationStep.SUBMISSION);
         applicationRepository.save(app);
 
-        // ================= 6. RECEIPT =================
+        // ================= 8. RECEIPT =================
         receiptService.generateAndSendReceipt(saved);
 
-        // ================= 7. EVENT =================
+        // ================= 9. EVENT =================
         Long applicantId = (app.getApplicant() != null)
                 ? app.getApplicant().getId()
                 : null;
@@ -258,4 +199,25 @@ public class PaymentProcessingService {
 //   "phone": "255789456123",
 //   "status": "SUCCESS",
 //   "provider": "MPESA"
+// }
+
+
+// USE 2 BELOW TO CHECK IF PAYMENT BY TIGO WILL NOT B SUCCESSFULLY PROCESSED BY MPESA WEBHOOK(OR VICE VERSER)
+//  X-Signature:  VALID-MPESA-SIGNATURE (MPESA webhook endpoint)
+// {
+//   "referenceNumber": "APP-2026-4-7EF0E6BE",
+//   "transactionId": "MPESA-74219833",
+//   "amount": 50000,
+//   "phone": "0789123456",
+//   "status": "SUCCESS",
+//   "provider": "MPESA"
+// }
+//  X-Signature:  VALID-TIGO-SIGNATURE (TIGO_PESA webhook endpoint)
+// {
+//   "referenceNumber": "APP-2026-4-7EF0E6BE",
+//   "transactionId": "TIGO-88991234",
+//   "amount": 50000,
+//   "phone": "0789123456",
+//   "status": "SUCCESS",
+//   "provider": "TIGO_PESA"
 // }

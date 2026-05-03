@@ -17,6 +17,8 @@ import com.znz.tpip_backend.model.Intake;
 import com.znz.tpip_backend.model.Payment;
 import com.znz.tpip_backend.repository.ApplicationRepository;
 import com.znz.tpip_backend.repository.IntakeRepository;
+import com.znz.tpip_backend.service.configDrivenApplicationSteps.ApplicationWorkflowConfig;
+import com.znz.tpip_backend.service.configDrivenApplicationSteps.StepConfig;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -28,7 +30,9 @@ public class ApplicationService {
 
     private final ApplicationRepository applicationRepository;
     private final IntakeRepository intakeRepository;
-    private final ApplicationStepEvaluator evaluator;
+    // private final ApplicationStepEvaluator evaluator;
+    private final ApplicationWorkflowConfig workflowConfig;
+
 
     public List<ApplicationDTO> getAllApplications() {
         return applicationRepository.findAll()
@@ -400,49 +404,63 @@ public class ApplicationService {
 
     private ApplicationStep determineNextStep(Application app) {
 
-        switch (app.getCurrentStep()) {
+        StepConfig config = workflowConfig.getConfig(app.getCurrentStep());
 
-            case PERSONAL_INFO -> {
-                if (!evaluator.isPersonalInfoComplete(app))
-                    return ApplicationStep.PERSONAL_INFO;
-                return ApplicationStep.EDUCATION;
-            }
-
-            case EDUCATION -> {
-                if (!evaluator.isEducationComplete(app))
-                    return ApplicationStep.EDUCATION;
-                return ApplicationStep.WORK_EXPERIENCE;
-            }
-
-            case WORK_EXPERIENCE -> {
-                if (!evaluator.isWorkExperienceComplete(app))
-                    return ApplicationStep.WORK_EXPERIENCE;
-                return ApplicationStep.PROGRAMME_CHOICE;
-            }
-
-            case PROGRAMME_CHOICE -> {
-                if (!evaluator.isProgrammeChoiceComplete(app))
-                    return ApplicationStep.PROGRAMME_CHOICE;
-                return ApplicationStep.REFEREES;
-            }
-
-            case REFEREES -> {
-                if (!evaluator.isRefereesComplete(app))
-                    return ApplicationStep.REFEREES;
-                return ApplicationStep.PAYMENT;
-            }
-
-            case PAYMENT -> {
-                if (!evaluator.isPaymentComplete(app))
-                    return ApplicationStep.PAYMENT;
-                return ApplicationStep.SUBMISSION;
-            }
-
-            default -> {
-                return ApplicationStep.SUBMISSION;
-            }
+        if (config == null) {
+            return ApplicationStep.SUBMISSION;
         }
+
+        if (!config.getCondition().test(app)) {
+            return app.getCurrentStep();
+        }
+
+        return config.getNextStep();
     }
+    // private ApplicationStep determineNextStep(Application app) {
+
+    // switch (app.getCurrentStep()) {
+
+    // case PERSONAL_INFO -> {
+    // if (!evaluator.isPersonalInfoComplete(app))
+    // return ApplicationStep.PERSONAL_INFO;
+    // return ApplicationStep.EDUCATION;
+    // }
+
+    // case EDUCATION -> {
+    // if (!evaluator.isEducationComplete(app))
+    // return ApplicationStep.EDUCATION;
+    // return ApplicationStep.WORK_EXPERIENCE;
+    // }
+
+    // case WORK_EXPERIENCE -> {
+    // if (!evaluator.isWorkExperienceComplete(app))
+    // return ApplicationStep.WORK_EXPERIENCE;
+    // return ApplicationStep.PROGRAMME_CHOICE;
+    // }
+
+    // case PROGRAMME_CHOICE -> {
+    // if (!evaluator.isProgrammeChoiceComplete(app))
+    // return ApplicationStep.PROGRAMME_CHOICE;
+    // return ApplicationStep.REFEREES;
+    // }
+
+    // case REFEREES -> {
+    // if (!evaluator.isRefereesComplete(app))
+    // return ApplicationStep.REFEREES;
+    // return ApplicationStep.PAYMENT;
+    // }
+
+    // case PAYMENT -> {
+    // if (!evaluator.isPaymentComplete(app))
+    // return ApplicationStep.PAYMENT;
+    // return ApplicationStep.SUBMISSION;
+    // }
+
+    // default -> {
+    // return ApplicationStep.SUBMISSION;
+    // }
+    // }
+    // }
 
     private ApplicationDTO mapToDTO(Application app) {
 
@@ -451,7 +469,7 @@ public class ApplicationService {
         dto.setId(app.getId());
         dto.setApplicationIndexNumber(app.getApplicationIndexNumber());
 
-        dto.setCurrentStep(app.getCurrentStep().getOrder());
+        dto.setCurrentStep(app.getCurrentStep());
         dto.setStatus(app.getStatus());
 
         dto.setLocked(app.isLocked());

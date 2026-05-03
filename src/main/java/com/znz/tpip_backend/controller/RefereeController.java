@@ -8,6 +8,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+
 @RestController
 @RequestMapping("/api/referees")
 @RequiredArgsConstructor
@@ -25,13 +26,20 @@ public class RefereeController {
         return ResponseEntity.ok(refereeService.getByApplication(id));
     }
 
-     @GetMapping("/validate-token")
+    @GetMapping("/validate-token")
     public ResponseEntity<RefereeTokenValidationDTO> validateToken(
             @RequestParam String token) {
 
-        RefereeTokenValidationDTO response =
-                refereeService.validateToken(token);
+        RefereeTokenValidationDTO response = refereeService.validateToken(token);
 
         return ResponseEntity.ok(response);
+    }
+
+    // ================= UPDATE REFEREE (PATCH STYLE) =================
+    @PatchMapping("/{id}")
+    public ResponseEntity<RefereeDTO> patchReferee(
+            @PathVariable Long id,
+            @RequestBody RefereeDTO dto) {
+        return ResponseEntity.ok(refereeService.update(id, dto));
     }
 }

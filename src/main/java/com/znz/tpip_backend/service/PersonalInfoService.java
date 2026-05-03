@@ -6,6 +6,7 @@ import com.znz.tpip_backend.model.*;
 import com.znz.tpip_backend.repository.ApplicantRepository;
 import com.znz.tpip_backend.repository.ApplicationRepository;
 import com.znz.tpip_backend.repository.PersonalInfoRepository;
+import com.znz.tpip_backend.service.configDrivenApplicationSteps.ApplicationEventPublisherService;
 
 import lombok.RequiredArgsConstructor;
 
@@ -156,4 +157,24 @@ public class PersonalInfoService {
 // "disabilityType": "NONE",
 // "disabilityNeeds": "",
 // "applicantId": 3
+// }
+// {
+//   "firstName": "Rahma",
+//   "middleName": "Suleiman",
+//   "lastName": "Rahma",
+//   "dateOfBirth": "2000-06-15",
+//   "gender": "FEMALE",
+//   "nationality": "Tanzanian",
+//   "phoneNumber": "0712345678",
+//   "alternativePhone": "0788888888",
+//   "email": "rahma.suleiman@gmail.com",
+//   "region": "URBAN_WEST",
+//   "district": "MJINI",
+//   "nextOfKinName": "Suleiman Ali",
+//   "nextOfKinRelationship": "FATHER",
+//   "nextOfKinPhone": "0711111111",
+//   "hasDisability": false,
+//   "disabilityType": "NONE",
+//   "disabilityNeeds": "",
+//   "applicantId": 4
 // }

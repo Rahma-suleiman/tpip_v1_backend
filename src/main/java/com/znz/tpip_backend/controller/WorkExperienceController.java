@@ -22,8 +22,15 @@ public class WorkExperienceController {
         return ResponseEntity.ok(service.create(dto));
     }
 
-    // UPDATE
-    @PutMapping("/{id}")
+    // // UPDATE
+    // @PutMapping("/{id}")
+    // public ResponseEntity<WorkExperienceDto> update(
+    //         @PathVariable Long id,
+    //         @RequestBody WorkExperienceDto dto) {
+    //     return ResponseEntity.ok(service.update(id, dto));
+    // }
+     // PATCH UPDATE (better semantic than PUT for partial updates)
+    @PatchMapping("/{id}")
     public ResponseEntity<WorkExperienceDto> update(
             @PathVariable Long id,
             @RequestBody WorkExperienceDto dto) {

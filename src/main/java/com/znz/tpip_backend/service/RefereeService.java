@@ -8,6 +8,9 @@ import com.znz.tpip_backend.model.Application;
 import com.znz.tpip_backend.model.Referee;
 import com.znz.tpip_backend.repository.ApplicationRepository;
 import com.znz.tpip_backend.repository.RefereeRepository;
+import com.znz.tpip_backend.service.common.PatchEngine;
+import com.znz.tpip_backend.service.configDrivenApplicationSteps.ApplicationEventPublisherService;
+
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
@@ -25,6 +28,7 @@ public class RefereeService {
     private final ApplicationEventPublisherService eventPublisher;
     private final RefereeEmailService refereeEmailService;
     private final TokenService tokenService;
+    private final PatchEngine patchEngine;
 
     // ================= CREATE REFEREE =================
     public RefereeDTO create(RefereeDTO dto) {
@@ -52,8 +56,7 @@ public class RefereeService {
         eventPublisher.publish(
                 app.getId(),
                 app.getApplicant().getId(),
-                app.getCurrentStep()
-        );
+                app.getCurrentStep());
 
         return modelMapper.map(saved, RefereeDTO.class);
     }
@@ -93,36 +96,96 @@ public class RefereeService {
 
         return dto;
     }
+
+    public RefereeDTO update(Long id, RefereeDTO dto) {
+
+        Referee referee = refereeRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Not found"));
+
+        Application app = referee.getApplication();
+
+        if (app.isLocked()) {
+            throw new RuntimeException("Application is locked");
+        }
+
+        // ================= SAFE PATCH =================
+        patchEngine.patch(dto, referee);
+
+        // ================= PROTECT SYSTEM FIELDS =================
+        referee.setId(referee.getId()); // safety
+        referee.setApplication(app); // prevent overwrite
+        referee.setToken(referee.getToken());
+        referee.setStatus(referee.getStatus());
+
+        Referee saved = refereeRepository.save(referee);
+
+        // ================= EVENT =================
+        eventPublisher.publish(
+                app.getId(),
+                app.getApplicant().getId(),
+                app.getCurrentStep());
+
+        return modelMapper.map(saved, RefereeDTO.class);
+    }
 }
-// FOR EACH Application  → 2 referees
+// FOR EACH Application → 2 referees
 // {
-//   "fullName": "Juma Salum",
-//   "title": "Senior Administration Officer",
-//   "organization": "Zanzibar Revenue Board",
-//   "email": "juma.salum@zrb.go.tz",
-//   "phone": "0242234567",
-//   "relationship": "Direct Supervisor",
-//   "applicationId": 1
+// "fullName": "Juma Salum",
+// "title": "Senior Administration Officer",
+// "organization": "Zanzibar Revenue Board",
+// "email": "juma.salum@zrb.go.tz",
+// "phone": "0242234567",
+// "relationship": "Direct Supervisor",
+// "applicationId": 1
 // }
 // {
-//   "fullName": "Fatma Khamis",
-//   "title": "ICT Manager",
-//   "organization": "Zanzibar ICT Commission",
-//   "email": "fatma.khamis@zict.go.tz",
-//   "phone": "0242239999",
-//   "relationship": "IT Supervisor",
-//   "applicationId": 2
+// "fullName": "Fatma Khamis",
+// "title": "ICT Manager",
+// "organization": "Zanzibar ICT Commission",
+// "email": "fatma.khamis@zict.go.tz",
+// "phone": "0242239999",
+// "relationship": "IT Supervisor",
+// "applicationId": 2
 // }
 // {
-//   "fullName": "Ali Hassan",
-//   "title": "Health Records Officer",
-//   "organization": "Pemba Hospital",
-//   "email": "ali.hassan@pembahospital.go.tz",
-//   "phone": "0242456789",
-//   "relationship": "Department Supervisor",
-//   "applicationId": 3
+// "fullName": "Ali Hassan",
+// "title": "Health Records Officer",
+// "organization": "Pemba Hospital",
+// "email": "ali.hassan@pembahospital.go.tz",
+// "phone": "0242456789",
+// "relationship": "Department Supervisor",
+// "applicationId": 3
 // }
-// Application 1 
+// Application 1
+// {
+// "fullName": "Asha Suleiman",
+// "title": "Human Resource Officer",
+// "organization": "Zanzibar Revenue Board",
+// "email": "asha.suleiman@zrb.go.tz",
+// "phone": "0242234500",
+// "relationship": "HR Supervisor",
+// "applicationId": 1
+// }
+// Application 2
+// {
+// "fullName": "Mohamed Rashid",
+// "title": "Network Administrator",
+// "organization": "Zanzibar ICT Commission",
+// "email": "mohamed.rashid@zict.go.tz",
+// "phone": "0242238888",
+// "relationship": "Technical Supervisor",
+// "applicationId": 2
+// }
+// Application 3
+// {
+// "fullName": "Salma Omar",
+// "title": "Medical Records Manager",
+// "organization": "Pemba Hospital",
+// "email": "salma.omar@pembahospital.go.tz",
+// "phone": "0242456000",
+// "relationship": "Line Manager",
+// "applicationId": 3
+// }
 // {
 //   "fullName": "Asha Suleiman",
 //   "title": "Human Resource Officer",
@@ -130,9 +193,8 @@ public class RefereeService {
 //   "email": "asha.suleiman@zrb.go.tz",
 //   "phone": "0242234500",
 //   "relationship": "HR Supervisor",
-//   "applicationId": 1
+//   "applicationId": 4
 // }
-// Application 2
 // {
 //   "fullName": "Mohamed Rashid",
 //   "title": "Network Administrator",
@@ -140,15 +202,5 @@ public class RefereeService {
 //   "email": "mohamed.rashid@zict.go.tz",
 //   "phone": "0242238888",
 //   "relationship": "Technical Supervisor",
-//   "applicationId": 2
-// }
-// Application 3 
-// {
-//   "fullName": "Salma Omar",
-//   "title": "Medical Records Manager",
-//   "organization": "Pemba Hospital",
-//   "email": "salma.omar@pembahospital.go.tz",
-//   "phone": "0242456000",
-//   "relationship": "Line Manager",
-//   "applicationId": 3
+//   "applicationId": 4
 // }
