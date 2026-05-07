@@ -11,4 +11,9 @@ public class LoginResponse {
     private String role;
 
     private String applicationIndexNumber;
+    private String firstName;
+
+    private String middleName;
+
+    private String lastName;
 }

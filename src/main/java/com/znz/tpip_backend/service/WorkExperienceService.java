@@ -7,6 +7,7 @@ import com.znz.tpip_backend.model.*;
 import com.znz.tpip_backend.repository.*;
 import com.znz.tpip_backend.service.common.PatchEngine;
 import com.znz.tpip_backend.service.configDrivenApplicationSteps.ApplicationEventPublisherService;
+import com.znz.tpip_backend.service.configDrivenApplicationSteps.ApplicationStepGuard;
 
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
@@ -19,6 +20,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class WorkExperienceService {
 
+    private final ApplicationStepGuard stepGuard;
     private final WorkExperienceRepository workExperienceRepository;
     private final ApplicantRepository applicantRepository;
     private final ApplicationRepository applicationRepository;
@@ -31,6 +33,10 @@ public class WorkExperienceService {
         Applicant applicant = applicantRepository.findById(dto.getApplicantId())
                 .orElseThrow(() -> new RuntimeException("Applicant not found"));
 
+        Application app = getApplication(applicant.getId());
+
+        stepGuard.validateStep(app, ApplicationStep.WORK_EXPERIENCE);
+
         validate(dto);
 
         WorkExperience work = modelMapper.map(dto, WorkExperience.class);
@@ -38,14 +44,8 @@ public class WorkExperienceService {
 
         WorkExperience saved = workExperienceRepository.save(work);
 
-        Application app = getApplication(applicant.getId());
+        eventPublisher.publish(app.getId(), applicant.getId(), ApplicationStep.WORK_EXPERIENCE);
 
-        // ✅ EVENT
-        // eventPublisher.publish(app.getId(), applicant.getId(),
-        // ApplicationStep.WORK_EXPERIENCE);
-        if (app.getCurrentStep() == ApplicationStep.WORK_EXPERIENCE) {
-            eventPublisher.publish(app.getId(), applicant.getId(), ApplicationStep.WORK_EXPERIENCE);
-        }
         return mapToDto(saved);
     }
 
@@ -56,23 +56,15 @@ public class WorkExperienceService {
 
         Application app = getApplication(work.getApplicant().getId());
 
-        // LOCK CHECK
-        if (app.isLocked()) {
-            throw new RuntimeException("Application is locked");
-        }
+        stepGuard.validateStep(app, ApplicationStep.WORK_EXPERIENCE);
 
-        // PATCH ENTITY FIRST
         patchEngine.patch(dto, work);
 
-        // VALIDATE ENTITY (NOT DTO)
         validateEntity(work);
 
         WorkExperience saved = workExperienceRepository.save(work);
 
-        eventPublisher.publish(
-                app.getId(),
-                work.getApplicant().getId(),
-                ApplicationStep.WORK_EXPERIENCE);
+        eventPublisher.publish(app.getId(), work.getApplicant().getId(), ApplicationStep.WORK_EXPERIENCE);
 
         return mapToDto(saved);
     }
@@ -120,18 +112,13 @@ public class WorkExperienceService {
         WorkExperience work = workExperienceRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Not found"));
 
-        Long applicantId = work.getApplicant().getId();
+        Application app = getApplication(work.getApplicant().getId());
+
+        stepGuard.validateStep(app, ApplicationStep.WORK_EXPERIENCE);
 
         workExperienceRepository.deleteById(id);
 
-        Application app = getApplication(applicantId);
-
-        // ✅ EVENT
-        // eventPublisher.publish(app.getId(),
-        // applicantId,ApplicationStep.WORK_EXPERIENCE);
-        if (app.getCurrentStep() == ApplicationStep.WORK_EXPERIENCE) {
-            eventPublisher.publish(app.getId(), applicantId, ApplicationStep.WORK_EXPERIENCE);
-        }
+        eventPublisher.publish(app.getId(), work.getApplicant().getId(), ApplicationStep.WORK_EXPERIENCE);
     }
 
     // ================= HELPERS =================

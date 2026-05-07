@@ -6,6 +6,7 @@ import com.znz.tpip_backend.enums.EducationLevel;
 import com.znz.tpip_backend.model.*;
 import com.znz.tpip_backend.repository.*;
 import com.znz.tpip_backend.service.configDrivenApplicationSteps.ApplicationEventPublisherService;
+import com.znz.tpip_backend.service.configDrivenApplicationSteps.ApplicationStepGuard;
 
 import lombok.RequiredArgsConstructor;
 
@@ -23,7 +24,7 @@ public class EducationService {
     private final EducationRepository educationRepository;
     private final ApplicantRepository applicantRepository;
     private final ApplicationRepository applicationRepository;
-
+    private final ApplicationStepGuard stepGuard;
     private final ApplicationEventPublisherService eventPublisher;
     private final ModelMapper modelMapper;
 
@@ -35,6 +36,11 @@ public class EducationService {
         Applicant applicant = applicantRepository.findById(dto.getApplicantId())
                 .orElseThrow(() -> new RuntimeException("Applicant not found"));
 
+        Application app = getApplication(applicant.getId());
+
+        // ✅ STEP GUARD
+        stepGuard.validateStep(app, ApplicationStep.EDUCATION);
+
         Education education = modelMapper.map(dto, Education.class);
         education.setApplicant(applicant);
 
@@ -42,77 +48,43 @@ public class EducationService {
 
         Education saved = educationRepository.save(education);
 
-        Application app = getApplication(applicant.getId());
+        eventPublisher.publish(app.getId(), applicant.getId(), ApplicationStep.EDUCATION);
 
-        // ✅ EVENT
-        // eventPublisher.publish(app.getId(),
-        // applicant.getId(),ApplicationStep.EDUCATION);
-        eventPublisher.publish(
-                app.getId(),
-                applicant.getId(),
-                ApplicationStep.EDUCATION);
-        // if (app.getCurrentStep() == ApplicationStep.EDUCATION) {
-        // eventPublisher.publish(app.getId(), applicant.getId(),
-        // ApplicationStep.EDUCATION);
-        // }
         return mapToDto(saved);
     }
 
     // ================= UPDATE =================
-      public EducationDto update(Long id, EducationDto dto) {
+    public EducationDto update(Long id, EducationDto dto) {
 
         Education education = educationRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Education not found"));
 
         Application app = getApplication(education.getApplicant().getId());
 
-        // ================= LOCK CHECK (IMPORTANT) =================
-        if (app.isLocked()) {
-            throw new RuntimeException("Application is locked. Updates are not allowed.");
-        }
+        stepGuard.validateStep(app, ApplicationStep.EDUCATION);
 
-        // ================= PARTIAL UPDATE (PATCH BEHAVIOR) =================
-        if (dto.getLevel() != null) {
+        if (dto.getLevel() != null)
             education.setLevel(dto.getLevel());
-        }
-
-        if (dto.getInstitutionName() != null) {
+        if (dto.getInstitutionName() != null)
             education.setInstitutionName(dto.getInstitutionName());
-        }
-
-        if (dto.getProgrammeName() != null) {
+        if (dto.getProgrammeName() != null)
             education.setProgrammeName(dto.getProgrammeName());
-        }
-
-        if (dto.getCompletionYear() != null) {
+        if (dto.getCompletionYear() != null)
             education.setCompletionYear(dto.getCompletionYear());
-        }
-
-        if (dto.getGpa() != null) {
+        if (dto.getGpa() != null)
             education.setGpa(dto.getGpa());
-        }
-
-        if (dto.getClassification() != null) {
+        if (dto.getClassification() != null)
             education.setClassification(dto.getClassification());
-        }
 
-        // subjects only if provided
         if (dto.getSubjects() != null) {
             mapSubjects(dto, education);
         }
 
-        // ================= VALIDATION AFTER MERGE =================
         validateEducationForUpdate(education);
 
         Education saved = educationRepository.save(education);
 
-        Application app2 = getApplication(education.getApplicant().getId());
-
-        // ================= EVENT TRIGGER =================
-        eventPublisher.publish(
-                app2.getId(),
-                education.getApplicant().getId(),
-                ApplicationStep.EDUCATION);
+        eventPublisher.publish(app.getId(), education.getApplicant().getId(), ApplicationStep.EDUCATION);
 
         return mapToDto(saved);
     }
@@ -156,17 +128,13 @@ public class EducationService {
         Education edu = educationRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Not found"));
 
-        Long applicantId = edu.getApplicant().getId();
+        Application app = getApplication(edu.getApplicant().getId());
+
+        stepGuard.validateStep(app, ApplicationStep.EDUCATION);
 
         educationRepository.deleteById(id);
 
-        Application app = getApplication(applicantId);
-
-        // EVENT (important)
-        eventPublisher.publish(app.getId(), applicantId, ApplicationStep.EDUCATION);
-        // if (app.getCurrentStep() == ApplicationStep.EDUCATION) {
-        // eventPublisher.publish(app.getId(), applicantId, ApplicationStep.EDUCATION);
-        // }
+        eventPublisher.publish(app.getId(), edu.getApplicant().getId(), ApplicationStep.EDUCATION);
     }
 
     // ================= APPLICATION FETCH =================

@@ -3,6 +3,7 @@ package com.znz.tpip_backend.service;
 import com.znz.tpip_backend.dto.RefereeDTO;
 import com.znz.tpip_backend.dto.RefereeTokenValidationDTO;
 import com.znz.tpip_backend.email.RefereeEmailService;
+import com.znz.tpip_backend.enums.ApplicationStep;
 import com.znz.tpip_backend.enums.RefereeStatus;
 import com.znz.tpip_backend.model.Application;
 import com.znz.tpip_backend.model.Referee;
@@ -10,6 +11,7 @@ import com.znz.tpip_backend.repository.ApplicationRepository;
 import com.znz.tpip_backend.repository.RefereeRepository;
 import com.znz.tpip_backend.service.common.PatchEngine;
 import com.znz.tpip_backend.service.configDrivenApplicationSteps.ApplicationEventPublisherService;
+import com.znz.tpip_backend.service.configDrivenApplicationSteps.ApplicationStepGuard;
 
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
@@ -22,6 +24,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class RefereeService {
 
+    private final ApplicationStepGuard stepGuard;
     private final RefereeRepository refereeRepository;
     private final ApplicationRepository applicationRepository;
     private final ModelMapper modelMapper;
@@ -36,9 +39,10 @@ public class RefereeService {
         Application app = applicationRepository.findById(dto.getApplicationId())
                 .orElseThrow(() -> new RuntimeException("Application not found"));
 
+        stepGuard.validateStep(app, ApplicationStep.REFEREES);
+
         Referee referee = modelMapper.map(dto, Referee.class);
 
-        // ================= TOKEN MUST BE GENERATED HERE =================
         String token = tokenService.generateToken();
 
         referee.setApplication(app);
@@ -46,17 +50,11 @@ public class RefereeService {
         referee.setToken(token);
         referee.setTokenExpiry(tokenService.expiryTime());
 
-        // ================= SAVE FIRST (IMPORTANT FIX) =================
         Referee saved = refereeRepository.save(referee);
 
-        // ================= SEND EMAIL USING SAVED DATA =================
         refereeEmailService.sendInvitation(saved);
 
-        // ================= TRIGGER WORKFLOW =================
-        eventPublisher.publish(
-                app.getId(),
-                app.getApplicant().getId(),
-                app.getCurrentStep());
+        eventPublisher.publish(app.getId(), app.getApplicant().getId(), ApplicationStep.REFEREES);
 
         return modelMapper.map(saved, RefereeDTO.class);
     }
@@ -187,20 +185,20 @@ public class RefereeService {
 // "applicationId": 3
 // }
 // {
-//   "fullName": "Asha Suleiman",
-//   "title": "Human Resource Officer",
-//   "organization": "Zanzibar Revenue Board",
-//   "email": "asha.suleiman@zrb.go.tz",
-//   "phone": "0242234500",
-//   "relationship": "HR Supervisor",
-//   "applicationId": 4
+// "fullName": "Asha Suleiman",
+// "title": "Human Resource Officer",
+// "organization": "Zanzibar Revenue Board",
+// "email": "asha.suleiman@zrb.go.tz",
+// "phone": "0242234500",
+// "relationship": "HR Supervisor",
+// "applicationId": 4
 // }
 // {
-//   "fullName": "Mohamed Rashid",
-//   "title": "Network Administrator",
-//   "organization": "Zanzibar ICT Commission",
-//   "email": "mohamed.rashid@zict.go.tz",
-//   "phone": "0242238888",
-//   "relationship": "Technical Supervisor",
-//   "applicationId": 4
+// "fullName": "Mohamed Rashid",
+// "title": "Network Administrator",
+// "organization": "Zanzibar ICT Commission",
+// "email": "mohamed.rashid@zict.go.tz",
+// "phone": "0242238888",
+// "relationship": "Technical Supervisor",
+// "applicationId": 4
 // }

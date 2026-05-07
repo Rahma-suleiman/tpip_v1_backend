@@ -43,6 +43,9 @@ public class AuthService {
         // 4. Create User
         User user = new User();
         user.setEmail(request.getEmail());
+        user.setFirstName(request.getFirstName());
+        user.setMiddleName(request.getMiddleName());
+        user.setLastName(request.getLastName());
         user.setMobileNumber(request.getMobileNumber());
         user.setPassword(passwordEncoder.encode(request.getPassword()));
         user.setRole(UserRole.APPLICANT);
@@ -76,6 +79,9 @@ public class AuthService {
         LoginResponse response = new LoginResponse();
         response.setUserId(user.getId());
         response.setApplicantId(applicant.getId());
+        response.setFirstName(user.getFirstName());
+        response.setMiddleName(user.getMiddleName());
+        response.setLastName(user.getLastName());
         response.setEmail(user.getEmail());
         response.setRole(user.getRole().name());
 
@@ -120,6 +126,33 @@ public class AuthService {
 //   "password": "123456",
 //   "indexNumber": "S1234-0456-2020"
 // }
+// {
+//   "firstName": "Shuayb",
+//   "middleName": "Mohd",
+//   "lastName": "Suleiman",
+//   "email": "shuayb123@gmail",
+//   "mobileNumber": "0657845601",
+//   "password": "Shuayb123@",
+//   "indexNumber": "S6578-0455-2022"
+// }
+// {
+//   "firstName": "Khadija",
+//   "middleName": "Abdul",
+//   "lastName": "Nassir",
+//   "email": "khdj123@gmail.com",
+//   "mobileNumber": "0731249487",
+//   "password": "khdj@234",
+//   "indexNumber": "S6578-0015-2018"
+// }
+// {
+//   "firstName": "Kauthar",
+//   "middleName": "Pongwa",
+//   "lastName": "Nassor",
+//   "email": "kau234@gmail.com",
+//   "mobileNumber": "0635627802",
+//   "password": "kau@234",
+//   "indexNumber": "S6578-0315-2023"
+// }
 // LOGIN 
 //   {
 //     "email": "amina@gmail.com",
@@ -136,4 +169,12 @@ public class AuthService {
 // {
 //   "email": "rahma.suleiman@gmail.com",
 //   "password": "123456"
+// }
+// {
+//   "email": "khdj123@gmail.com",
+//   "password": "khdj@234"
+// }
+// {
+//   "email": "kau234@gmail.com",
+//   "password": "kau@234"
 // }

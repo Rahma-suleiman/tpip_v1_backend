@@ -6,6 +6,7 @@ import com.znz.tpip_backend.enums.EducationLevel;
 import com.znz.tpip_backend.model.*;
 import com.znz.tpip_backend.repository.*;
 import com.znz.tpip_backend.service.configDrivenApplicationSteps.ApplicationEventPublisherService;
+import com.znz.tpip_backend.service.configDrivenApplicationSteps.ApplicationStepGuard;
 import com.znz.tpip_backend.validation.ProgrammeChoiceValidator;
 
 import lombok.RequiredArgsConstructor;
@@ -26,69 +27,32 @@ public class ProgrammeChoiceService {
         private final EducationRepository educationRepository;
         private final ApplicationEventPublisherService eventPublisher;
         private final ModelMapper modelMapper;
+        private final ApplicationStepGuard stepGuard;
 
-        // ================= CREATE =================
-        // public ProgrammeChoiceDto create(ProgrammeChoiceDto dto) {
-
-        // Application app = applicationRepository.findById(dto.getApplicationId())
-        // .orElseThrow(() -> new RuntimeException("Application not found"));
-
-        // Programme programme = programmeRepository.findById(dto.getProgrammeId())
-        // .orElseThrow(() -> new RuntimeException("Programme not found"));
-
-        // List<ProgrammeChoice> existing =
-        // programmeChoiceRepository.findByApplicationId(app.getId());
-
-        // ProgrammeChoiceValidator.validateCreate(
-        // existing,
-        // dto.getPreferenceRank(),
-        // dto.getProgrammeId());
-
-        // ProgrammeChoice choice = new ProgrammeChoice();
-        // choice.setApplication(app);
-        // choice.setProgramme(programme);
-        // choice.setPreferenceRank(dto.getPreferenceRank());
-
-        // applyEligibility(choice, app.getApplicant(), programme);
-        // ProgrammeChoice saved = programmeChoiceRepository.save(choice);
-
-        // // ✅ EVENT
-        // eventPublisher.publish(app.getId(), app.getApplicant().getId(),
-        // ApplicationStep.PROGRAMME_CHOICE);
-
-        // return map(saved);
-
-        // }
         public ProgrammeChoiceDto create(ProgrammeChoiceDto dto) {
 
                 Application app = applicationRepository.findById(dto.getApplicationId())
                                 .orElseThrow(() -> new RuntimeException("Application not found"));
+
+                stepGuard.validateStep(app, ApplicationStep.PROGRAMME_CHOICE);
 
                 Programme programme = programmeRepository.findById(dto.getProgrammeId())
                                 .orElseThrow(() -> new RuntimeException("Programme not found"));
 
                 List<ProgrammeChoice> existing = programmeChoiceRepository.findByApplicationId(app.getId());
 
-                ProgrammeChoiceValidator.validateCreate(
-                                existing,
-                                dto.getPreferenceRank(),
-                                dto.getProgrammeId());
+                ProgrammeChoiceValidator.validateCreate(existing, dto.getPreferenceRank(), dto.getProgrammeId());
 
                 ProgrammeChoice choice = new ProgrammeChoice();
                 choice.setApplication(app);
                 choice.setProgramme(programme);
                 choice.setPreferenceRank(dto.getPreferenceRank());
 
-                // SYSTEM ALWAYS COMPUTES THESE
                 applyEligibility(choice, app.getApplicant(), programme);
 
                 ProgrammeChoice saved = programmeChoiceRepository.save(choice);
 
                 eventPublisher.publish(app.getId(), app.getApplicant().getId(), ApplicationStep.PROGRAMME_CHOICE);
-                // if (app.getCurrentStep() == ApplicationStep.PROGRAMME_CHOICE) {
-                //         // eventPublisher.publish(app.getId(), app.getApplicant().getId(),ApplicationStep.PROGRAMME_CHOICE);
-                //         eventPublisher.publish(app.getId(), app.getApplicant().getId(),ApplicationStep.PROGRAMME_CHOICE);
-                // }
 
                 return map(saved);
         }
@@ -125,7 +89,6 @@ public class ProgrammeChoiceService {
                                 choice.getApplication().getApplicant().getId(),
                                 ApplicationStep.PROGRAMME_CHOICE);
 
-                                
                 return map(saved);
         }
 
@@ -283,17 +246,17 @@ public class ProgrammeChoiceService {
 // }
 // APPLICANT 4
 // {
-//   "preferenceRank": 1,
-//   "applicationId": 4,
-//   "programmeId": 1
+// "preferenceRank": 1,
+// "applicationId": 4,
+// "programmeId": 1
 // }
 // {
-//   "preferenceRank": 2,
-//   "applicationId": 4,
-//   "programmeId": 2
+// "preferenceRank": 2,
+// "applicationId": 4,
+// "programmeId": 2
 // }
 // {
-//   "preferenceRank": 3,
-//   "applicationId": 4,
-//   "programmeId": 5
+// "preferenceRank": 3,
+// "applicationId": 4,
+// "programmeId": 5
 // }

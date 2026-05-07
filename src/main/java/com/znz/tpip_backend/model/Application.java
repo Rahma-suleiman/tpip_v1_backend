@@ -7,6 +7,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.znz.tpip_backend.enums.AdminState;
 import com.znz.tpip_backend.enums.ApplicationStatus;
 import com.znz.tpip_backend.enums.ApplicationStep;
 
@@ -59,8 +60,13 @@ public class Application {
     private boolean locked = false;
 
     private LocalDateTime submittedAt;
-    
+
     private LocalDateTime lockedAt;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private AdminState adminState = AdminState.SUBMITTED;
+    
     // fk
     @ManyToOne
     @JoinColumn(name = "applicant_id", nullable = false)
@@ -80,6 +86,34 @@ public class Application {
     @OneToMany(mappedBy = "application", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ProgrammeChoice> programmeChoices = new ArrayList<>();
 
+    // BELOW METHODS R 4 ADMIN REVIEW PROCESS
+    public boolean hasMissingDocuments() {
+        return false; // implement based on documents
+    }
+
+    public boolean isAdminReviewComplete() {
+        return true;
+    }
+
+    public boolean requiresInterview() {
+        return false;
+    }
+
+    public boolean isEligibleForApproval() {
+        return true;
+    }
+
+    public boolean isRejected() {
+        return false;
+    }
+
+    public boolean isBorderline() {
+        return false;
+    }
+
+    public void addAdminComment(String comment) {
+        // implement comment entity later
+    }
 }
 // User → Applicant → Active Intake → Application
 

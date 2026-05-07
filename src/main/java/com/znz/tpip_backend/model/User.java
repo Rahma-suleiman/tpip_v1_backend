@@ -14,38 +14,43 @@ import lombok.Data;
 @Inheritance(strategy = InheritanceType.JOINED)
 public class User extends AuditModel<String> {
   @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  private Long id;
 
-    // Login credentials
-    @Column(nullable = false, unique = true)
-    private String email;
+  private String firstName;
 
-    @Column(nullable = false)
-    private String password;
+  private String middleName;
 
-    // Contact
-    @Column(nullable = false)
-    private String mobileNumber;
+  private String lastName;
 
-    // Role (Applicant, Reviewer, Admin, etc.)
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private UserRole role;
+  // Login credentials
+  @Column(nullable = false, unique = true)
+  private String email;
 
-    // Verification
-    // private Boolean isVerified = false;
+  @Column(nullable = false)
+  private String password;
 
-    // private String otpCode;
-    // private LocalDateTime otpExpiry;
+  // Contact
+  @Column(nullable = false)
+  private String mobileNumber;
 
-    // Account status
-    private Boolean isActive = true;
+  // Role (Applicant, Reviewer, Admin, etc.)
+  @Enumerated(EnumType.STRING)
+  @Column(nullable = false)
+  private UserRole role;
 
+  // Verification
+  // private Boolean isVerified = false;
 
-    // Relationship with Applicant
-    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL)
-    private Applicant applicant;
+  // private String otpCode;
+  // private LocalDateTime otpExpiry;
+
+  // Account status
+  private Boolean isActive = true;
+
+  // Relationship with Applicant
+  @OneToOne(mappedBy = "user", cascade = CascadeType.ALL)
+  private Applicant applicant;
 
 }
 // ALTER TABLE users ALTER COLUMN password DROP NOT NULL;

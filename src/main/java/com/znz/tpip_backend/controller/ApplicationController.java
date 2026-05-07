@@ -6,13 +6,16 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import com.znz.tpip_backend.dto.ApplicationDTO;
+import com.znz.tpip_backend.dto.ApplicationFormDto;
 import com.znz.tpip_backend.dto.ApplicationProgressDto;
+import com.znz.tpip_backend.dto.StepConfigDto;
 import com.znz.tpip_backend.enums.ApplicationStatus;
 import com.znz.tpip_backend.enums.ApplicationStep;
 import com.znz.tpip_backend.model.Applicant;
 import com.znz.tpip_backend.model.User;
 import com.znz.tpip_backend.repository.UserRepository;
 import com.znz.tpip_backend.service.ApplicationService;
+// import com.znz.tpip_backend.service.configDrivenApplicationSteps.StepConfig;
 
 import lombok.RequiredArgsConstructor;
 
@@ -91,5 +94,25 @@ public class ApplicationController {
         @GetMapping("/resume/{applicantId}")
         public ResponseEntity<?> resume(@PathVariable Long applicantId) {
                 return ResponseEntity.ok(applicationService.resumeProgress(applicantId));
+        }
+
+        @GetMapping("/{id}/progress")
+        public ResponseEntity<ApplicationProgressDto> getProgress(@PathVariable Long id) {
+                return ResponseEntity.ok(applicationService.getApplicationProgress(id));
+        }
+
+        @GetMapping("/workflow")
+        public ResponseEntity<List<StepConfigDto>> getWorkflow() {
+
+                return ResponseEntity.ok(
+                                applicationService.getWorkflowSteps());
+        }
+
+        // save form data for each step
+        @PutMapping("/{id}/form")
+        public ResponseEntity<ApplicationDTO> saveStepData(
+                        @PathVariable Long id,
+                        @RequestBody ApplicationFormDto dto) {
+                return ResponseEntity.ok(applicationService.saveStepData(id, dto));
         }
 }

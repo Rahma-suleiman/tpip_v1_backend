@@ -7,6 +7,7 @@ import com.znz.tpip_backend.repository.ApplicantRepository;
 import com.znz.tpip_backend.repository.ApplicationRepository;
 import com.znz.tpip_backend.repository.PersonalInfoRepository;
 import com.znz.tpip_backend.service.configDrivenApplicationSteps.ApplicationEventPublisherService;
+import com.znz.tpip_backend.service.configDrivenApplicationSteps.ApplicationStepGuard;
 
 import lombok.RequiredArgsConstructor;
 
@@ -22,12 +23,19 @@ public class PersonalInfoService {
     private final ApplicationRepository applicationRepository;
     private final ApplicationEventPublisherService eventPublisher;
     private final ModelMapper modelMapper;
+    private final ApplicationStepGuard stepGuard;
 
     // ================= CREATE / UPDATE =================
+
     public PersonalInfoDto save(Long applicantId, PersonalInfoDto dto) {
 
         Applicant applicant = applicantRepository.findById(applicantId)
                 .orElseThrow(() -> new RuntimeException("Applicant not found"));
+
+        Application app = getApplication(applicantId);
+
+        // ✅ STEP GUARD
+        stepGuard.validateStep(app, ApplicationStep.PERSONAL_INFO);
 
         PersonalInfo info = personalInfoRepository
                 .findByApplicantId(applicantId)
@@ -36,7 +44,6 @@ public class PersonalInfoService {
         modelMapper.map(dto, info);
         info.setApplicant(applicant);
 
-        // NEXT OF KIN
         if (dto.getNextOfKinName() != null) {
             NextOfKin nok = info.getNextOfKin() != null ? info.getNextOfKin() : new NextOfKin();
             nok.setKinFullName(dto.getNextOfKinName());
@@ -45,7 +52,6 @@ public class PersonalInfoService {
             info.setNextOfKin(nok);
         }
 
-        // DISABILITY
         if (dto.getHasDisability() != null) {
             Disability d = info.getDisability() != null ? info.getDisability() : new Disability();
             d.setHasDisability(dto.getHasDisability());
@@ -56,13 +62,7 @@ public class PersonalInfoService {
 
         PersonalInfo saved = personalInfoRepository.save(info);
 
-        Application app = getApplication(applicantId);
-
-        // ✅ EVENT
-        // eventPublisher.publish(app.getId(), applicantId,ApplicationStep.PERSONAL_INFO);
-        if (app.getCurrentStep() == ApplicationStep.PERSONAL_INFO) {
-            eventPublisher.publish(app.getId(), applicantId, ApplicationStep.PERSONAL_INFO);
-        }
+        eventPublisher.publish(app.getId(), applicantId, ApplicationStep.PERSONAL_INFO);
 
         return mapToDto(saved);
     }
@@ -159,22 +159,43 @@ public class PersonalInfoService {
 // "applicantId": 3
 // }
 // {
-//   "firstName": "Rahma",
-//   "middleName": "Suleiman",
-//   "lastName": "Rahma",
-//   "dateOfBirth": "2000-06-15",
-//   "gender": "FEMALE",
+// "firstName": "Rahma",
+// "middleName": "Suleiman",
+// "lastName": "Rahma",
+// "dateOfBirth": "2000-06-15",
+// "gender": "FEMALE",
+// "nationality": "Tanzanian",
+// "phoneNumber": "0712345678",
+// "alternativePhone": "0788888888",
+// "email": "rahma.suleiman@gmail.com",
+// "region": "URBAN_WEST",
+// "district": "MJINI",
+// "nextOfKinName": "Suleiman Ali",
+// "nextOfKinRelationship": "FATHER",
+// "nextOfKinPhone": "0711111111",
+// "hasDisability": false,
+// "disabilityType": "NONE",
+// "disabilityNeeds": "",
+// "applicantId": 4
+// }
+// shuayb id 6
+// {
+//   "firstName": "Shuayb",
+//   "middleName": "Mohd",
+//   "lastName": "Suleiman",
+//   "dateOfBirth": "2002-08-15",
+//   "gender": "MALE",
 //   "nationality": "Tanzanian",
-//   "phoneNumber": "0712345678",
-//   "alternativePhone": "0788888888",
-//   "email": "rahma.suleiman@gmail.com",
+//   "phoneNumber": "0657845601",
+//   "alternativePhone": "0712345678",
+//   "email": "shuayb123@gmail.com",
 //   "region": "URBAN_WEST",
 //   "district": "MJINI",
-//   "nextOfKinName": "Suleiman Ali",
+//   "nextOfKinName": "Mohd Suleiman",
 //   "nextOfKinRelationship": "FATHER",
-//   "nextOfKinPhone": "0711111111",
+//   "nextOfKinPhone": "0711223344",
 //   "hasDisability": false,
 //   "disabilityType": "NONE",
-//   "disabilityNeeds": "",
-//   "applicantId": 4
+//   "disabilityNeeds": "None",
+//   "applicantId": 1
 // }

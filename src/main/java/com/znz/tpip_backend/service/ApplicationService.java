@@ -1,22 +1,27 @@
 package com.znz.tpip_backend.service;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
 
 import com.znz.tpip_backend.dto.ApplicationDTO;
+import com.znz.tpip_backend.dto.ApplicationFormDto;
 import com.znz.tpip_backend.dto.ApplicationProgressDto;
+import com.znz.tpip_backend.dto.PaymentDTO;
+import com.znz.tpip_backend.dto.PersonalInfoDto;
+import com.znz.tpip_backend.dto.StepConfigDto;
 // import com.znz.tpip_backend.controller.ApplicationProgressDto;
 import com.znz.tpip_backend.enums.ApplicationStatus;
 import com.znz.tpip_backend.enums.ApplicationStep;
 import com.znz.tpip_backend.enums.PaymentStatus;
-import com.znz.tpip_backend.model.Applicant;
-import com.znz.tpip_backend.model.Application;
-import com.znz.tpip_backend.model.Intake;
-import com.znz.tpip_backend.model.Payment;
+import com.znz.tpip_backend.enums.RefereeStatus;
+import com.znz.tpip_backend.model.*;
 import com.znz.tpip_backend.repository.ApplicationRepository;
 import com.znz.tpip_backend.repository.IntakeRepository;
+// import com.znz.tpip_backend.repository.ProgrammeChoiceRepository;
+import com.znz.tpip_backend.repository.ProgrammeRepository;
 import com.znz.tpip_backend.service.configDrivenApplicationSteps.ApplicationWorkflowConfig;
 import com.znz.tpip_backend.service.configDrivenApplicationSteps.StepConfig;
 
@@ -32,7 +37,7 @@ public class ApplicationService {
     private final IntakeRepository intakeRepository;
     // private final ApplicationStepEvaluator evaluator;
     private final ApplicationWorkflowConfig workflowConfig;
-
+    private final ProgrammeRepository programmeRepository;
 
     public List<ApplicationDTO> getAllApplications() {
         return applicationRepository.findAll()
@@ -41,7 +46,10 @@ public class ApplicationService {
                 .toList();
     }
 
+  
+    // ================= GET APPLICATION BY ID =================
     public ApplicationDTO getApplicationById(Long id) {
+
         Application app = applicationRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Application not found"));
 
@@ -208,9 +216,9 @@ public class ApplicationService {
             // case SUBMISSION -> validateSubmissionReadiness(app);
             case SUBMISSION -> {
                 // FINAL SAFETY CHECK ONLY
-                if (!app.isLocked()) {
-                    throw new IllegalStateException("Application must be locked after submission");
-                }
+                // if (!app.isLocked()) {
+                //     throw new IllegalStateException("Application must be locked after submission");
+                // }
             }
         }
     }
@@ -332,17 +340,6 @@ public class ApplicationService {
         validatePayment(app);
     }
 
-    // private void validateSubmissionCore(Application app) {
-
-    // validatePersonalInfo(app);
-    // validateEducation(app);
-    // validateProgrammeChoice(app);
-
-    // // TEMP disabled modules
-    // // validateReferees(app);
-    // // validatePayment(app);
-    // }
-
     public ApplicationProgressDto getCurrentStep(Long applicationId) {
 
         Application app = applicationRepository.findById(applicationId)
@@ -416,52 +413,370 @@ public class ApplicationService {
 
         return config.getNextStep();
     }
-    // private ApplicationStep determineNextStep(Application app) {
 
-    // switch (app.getCurrentStep()) {
+    public ApplicationProgressDto getApplicationProgress(Long applicationId) {
 
-    // case PERSONAL_INFO -> {
-    // if (!evaluator.isPersonalInfoComplete(app))
-    // return ApplicationStep.PERSONAL_INFO;
-    // return ApplicationStep.EDUCATION;
-    // }
+        Application app = applicationRepository.findById(applicationId)
+                .orElseThrow(() -> new RuntimeException("Application not found"));
 
-    // case EDUCATION -> {
-    // if (!evaluator.isEducationComplete(app))
-    // return ApplicationStep.EDUCATION;
-    // return ApplicationStep.WORK_EXPERIENCE;
-    // }
+        ApplicationProgressDto dto = new ApplicationProgressDto();
 
-    // case WORK_EXPERIENCE -> {
-    // if (!evaluator.isWorkExperienceComplete(app))
-    // return ApplicationStep.WORK_EXPERIENCE;
-    // return ApplicationStep.PROGRAMME_CHOICE;
-    // }
+        dto.setApplicationId(app.getId());
+        dto.setApplicantId(app.getApplicant().getId());
+        dto.setCurrentStep(app.getCurrentStep());
+        dto.setStatus(app.getStatus());
+        dto.setLocked(app.isLocked());
 
-    // case PROGRAMME_CHOICE -> {
-    // if (!evaluator.isProgrammeChoiceComplete(app))
-    // return ApplicationStep.PROGRAMME_CHOICE;
-    // return ApplicationStep.REFEREES;
-    // }
+        int totalSteps = ApplicationStep.values().length;
+        int currentOrder = app.getCurrentStep().getOrder();
 
-    // case REFEREES -> {
-    // if (!evaluator.isRefereesComplete(app))
-    // return ApplicationStep.REFEREES;
-    // return ApplicationStep.PAYMENT;
-    // }
+        int progress = (int) ((currentOrder * 100.0) / totalSteps);
 
-    // case PAYMENT -> {
-    // if (!evaluator.isPaymentComplete(app))
-    // return ApplicationStep.PAYMENT;
-    // return ApplicationStep.SUBMISSION;
-    // }
+        dto.setProgressPercentage(progress);
+        dto.setCurrentStepLabel(app.getCurrentStep().name().replace("_", " "));
 
-    // default -> {
-    // return ApplicationStep.SUBMISSION;
-    // }
-    // }
-    // }
+        // optional UX improvement
+        dto.setNextStep(determineNextStep(app));
 
+        return dto;
+    }
+
+    public List<StepConfigDto> getWorkflowSteps() {
+
+        return workflowConfig.getAllSteps()
+                .stream()
+                .map(config -> {
+                    StepConfigDto dto = new StepConfigDto();
+
+                    dto.setStep(config.getStep());
+                    dto.setNextStep(config.getNextStep());
+                    dto.setPrevStep(config.getPrevStep());
+                    dto.setOrder(config.getOrder());
+
+                    return dto;
+                })
+                .toList();
+    }
+
+    public ApplicationDTO saveStepData(Long appId, ApplicationFormDto dto) {
+
+        Application app = getApplication(appId);
+
+        checkIfLocked(app);
+
+        switch (app.getCurrentStep()) {
+
+            case PERSONAL_INFO -> updatePersonalInfo(app, dto);
+
+            case EDUCATION -> updateEducation(app, dto);
+
+            case WORK_EXPERIENCE -> updateWork(app, dto);
+
+            case PROGRAMME_CHOICE -> updateProgramme(app, dto);
+
+            case REFEREES -> updateReferees(app, dto);
+
+            case PAYMENT -> updatePayment(app, dto);
+
+            case SUBMISSION -> {
+                // no save needed
+            }
+
+            default -> throw new IllegalStateException(
+                    "Invalid step: " + app.getCurrentStep());
+        }
+
+        // AUTO MOVE TO NEXT STEP
+        ApplicationStep nextStep = determineNextStep(app);
+
+        app.setCurrentStep(nextStep);
+
+        return mapToDTO(applicationRepository.save(app));
+    }
+
+    public ApplicationDTO moveNext(Long appId) {
+
+        Application app = getApplication(appId);
+
+        StepConfig config = workflowConfig.getConfig(app.getCurrentStep());
+
+        if (!config.getCondition().test(app)) {
+            throw new IllegalStateException("Step not completed yet");
+        }
+
+        ApplicationStep next = config.getNextStep();
+
+        if (next == null) {
+            throw new IllegalStateException("No next step found");
+        }
+
+        app.setCurrentStep(next);
+
+        return mapToDTO(applicationRepository.save(app));
+    }
+
+    // ================= PERSONAL INFO =================
+    private void updatePersonalInfo(Application app, ApplicationFormDto dto) {
+
+        if (dto.getPersonalInfo() == null) {
+            throw new IllegalStateException("Personal info is required");
+        }
+
+        Applicant applicant = app.getApplicant();
+
+        // ✅ FIX: correct type
+        PersonalInfoDto dtoInfo = dto.getPersonalInfo();
+
+        PersonalInfo info = applicant.getPersonalInfo();
+
+        if (info == null) {
+            info = new PersonalInfo();
+            info.setApplicant(applicant);
+            applicant.setPersonalInfo(info);
+        }
+
+        // ================= REQUIRED FIELDS =================
+        if (dtoInfo.getFirstName() == null || dtoInfo.getLastName() == null) {
+            throw new IllegalStateException("First name and last name are required");
+        }
+
+        if (dtoInfo.getDateOfBirth() == null) {
+            throw new IllegalStateException("Date of birth is required");
+        }
+
+        if (dtoInfo.getEmail() == null) {
+            throw new IllegalStateException("Email is required");
+        }
+
+        // ================= MAP DATA =================
+        info.setFirstName(dtoInfo.getFirstName());
+        info.setMiddleName(dtoInfo.getMiddleName());
+        info.setLastName(dtoInfo.getLastName());
+        info.setDateOfBirth(dtoInfo.getDateOfBirth());
+
+        info.setGender(dtoInfo.getGender());
+        info.setNationality(dtoInfo.getNationality());
+
+        info.setPhoneNumber(dtoInfo.getPhoneNumber());
+        info.setAlternativePhone(dtoInfo.getAlternativePhone());
+
+        info.setEmail(dtoInfo.getEmail());
+
+        info.setRegion(dtoInfo.getRegion());
+        info.setDistrict(dtoInfo.getDistrict());
+
+        // ================= NEXT OF KIN =================
+        NextOfKin nok = new NextOfKin();
+        nok.setKinFullName(dtoInfo.getNextOfKinName());
+        nok.setKinRelationship(dtoInfo.getNextOfKinRelationship());
+        nok.setKinPhoneNumber(dtoInfo.getNextOfKinPhone());
+        info.setNextOfKin(nok);
+
+        // ================= DISABILITY =================
+        Disability disability = new Disability();
+        disability.setHasDisability(dtoInfo.getHasDisability());
+        disability.setDisabilityType(dtoInfo.getDisabilityType());
+        disability.setDisabilityNeeds(dtoInfo.getDisabilityNeeds());
+        info.setDisability(disability);
+    }
+
+    private void updateEducation(Application app, ApplicationFormDto dto) {
+
+        if (dto.getEducations() == null || dto.getEducations().isEmpty()) {
+            throw new IllegalStateException("Education data required");
+        }
+
+        Applicant applicant = app.getApplicant();
+
+        // IMPORTANT: clear properly (avoid orphan issues)
+        applicant.getEducations().clear();
+
+        dto.getEducations().forEach(e -> {
+
+            Education edu = new Education();
+
+            edu.setApplicant(applicant);
+
+            edu.setLevel(e.getLevel());
+            edu.setInstitutionName(e.getInstitutionName());
+
+            edu.setProgrammeName(e.getProgrammeName()); // ✅ missing before
+
+            edu.setCompletionYear(e.getCompletionYear()); // ❗ FIXED (was yearFrom/yearTo)
+
+            edu.setGpa(e.getGpa());
+            edu.setClassification(e.getClassification());
+
+            edu.setIsVerified(false); // default for new entries
+
+            applicant.getEducations().add(edu);
+        });
+    }
+
+    private void updateWork(Application app, ApplicationFormDto dto) {
+
+        Applicant applicant = app.getApplicant();
+
+        applicant.setHasWorkExperience(dto.getHasWorkExperience());
+
+        // IMPORTANT: clear properly (avoid NPE safety)
+        if (applicant.getWorkExperiences() == null) {
+            applicant.setWorkExperiences(new ArrayList<>());
+        } else {
+            applicant.getWorkExperiences().clear();
+        }
+
+        // only if user has experience
+        if (Boolean.TRUE.equals(dto.getHasWorkExperience())
+                && dto.getWorkExperiences() != null) {
+
+            dto.getWorkExperiences().forEach(w -> {
+
+                WorkExperience work = new WorkExperience();
+
+                // ================= EMPLOYER DETAILS =================
+                work.setEmployerName(w.getEmployerName());
+                work.setEmployerAddress(w.getEmployerAddress());
+                work.setEmployerPhone(w.getEmployerPhone());
+                work.setEmployerEmail(w.getEmployerEmail());
+
+                // ================= JOB DETAILS =================
+                work.setJobTitle(w.getJobTitle());
+                work.setDepartment(w.getDepartment());
+                work.setResponsibilities(w.getResponsibilities());
+
+                // ================= EMPLOYMENT PERIOD =================
+                work.setStartDate(w.getStartDate());
+                work.setEndDate(w.getEndDate());
+                work.setIsCurrentlyEmployed(w.getIsCurrentlyEmployed());
+
+                // ================= EMPLOYMENT TYPE =================
+                work.setEmploymentType(w.getEmploymentType());
+
+                // ================= LOCATION =================
+                work.setCountry(w.getCountry());
+                work.setRegion(w.getRegion());
+                work.setDistrict(w.getDistrict());
+                work.setCity(w.getCity());
+
+                // ================= RELATIONSHIP (IMPORTANT) =================
+                work.setApplicant(applicant);
+
+                applicant.getWorkExperiences().add(work);
+            });
+        }
+    }
+
+    private void updateProgramme(Application app, ApplicationFormDto dto) {
+
+        if (dto.getProgrammeChoiceIds() == null ||
+                dto.getProgrammeChoiceIds().isEmpty()) {
+            throw new IllegalStateException("Programme choices required");
+        }
+
+        // ensure list is initialized
+        if (app.getProgrammeChoices() == null) {
+            app.setProgrammeChoices(new ArrayList<>());
+        } else {
+            app.getProgrammeChoices().clear();
+        }
+
+        int rank = 1;
+
+        for (Long programmeId : dto.getProgrammeChoiceIds()) {
+
+            Programme programme = programmeRepository.findById(programmeId)
+                    .orElseThrow(() -> new RuntimeException(
+                            "Programme not found with id: " + programmeId));
+
+            ProgrammeChoice pc = new ProgrammeChoice();
+
+            pc.setApplication(app);
+            pc.setProgramme(programme);
+
+            // REQUIRED FIELD
+            pc.setPreferenceRank(rank++);
+
+            // optional defaults (good practice)
+            pc.setIsEligible(null);
+            pc.setMatchScore(null);
+
+            app.getProgrammeChoices().add(pc);
+        }
+    }
+
+    private void updateReferees(Application app, ApplicationFormDto dto) {
+
+        if (dto.getReferees() == null || dto.getReferees().size() < 2) {
+            throw new IllegalStateException("Minimum 2 referees required");
+        }
+
+        // clear existing referees
+        app.getReferees().clear();
+
+        dto.getReferees().forEach(r -> {
+
+            Referee ref = new Referee();
+
+            ref.setApplication(app);
+
+            ref.setFullName(r.getFullName());
+            ref.setTitle(r.getTitle());
+            ref.setOrganization(r.getOrganization());
+            ref.setEmail(r.getEmail());
+            ref.setPhone(r.getPhone());
+            ref.setRelationship(r.getRelationship());
+
+            // default status (optional but good practice)
+            ref.setStatus(RefereeStatus.PENDING);
+
+            app.getReferees().add(ref);
+        });
+    }
+
+    private void updatePayment(Application app, ApplicationFormDto dto) {
+
+        if (dto.getPayment() == null ||
+                dto.getPayment().getReferenceNumber() == null ||
+                dto.getPayment().getReferenceNumber().isBlank()) {
+
+            throw new IllegalStateException("Payment reference required");
+        }
+
+        Payment payment = app.getPayment();
+
+        // ================= CREATE PAYMENT IF NULL =================
+        if (payment == null) {
+
+            payment = new Payment();
+
+            payment.setApplication(app);
+            payment.setInitiatedAt(LocalDateTime.now());
+            payment.setStatus(PaymentStatus.PENDING);
+
+            // set reference ONLY ONCE (immutable field)
+            payment.setReferenceNumber(dto.getPayment().getReferenceNumber());
+
+            app.setPayment(payment);
+        }
+
+        // ================= UPDATE SAFE FIELDS =================
+        PaymentDTO paymentDTO = dto.getPayment();
+
+        payment.setUpdatedAt(LocalDateTime.now());
+
+        // optional fields (safe updates)
+        payment.setAmount(paymentDTO.getAmount());
+        payment.setCurrency(paymentDTO.getCurrency());
+        payment.setMethod(paymentDTO.getMethod());
+        payment.setChannel(paymentDTO.getChannel());
+        payment.setPayerPhone(paymentDTO.getPayerPhone());
+        payment.setPayerName(paymentDTO.getPayerName());
+
+        // DO NOT overwrite referenceNumber again (immutable rule)
+    }
+
+    // ================= MAP ENTITY TO DTO =================
     private ApplicationDTO mapToDTO(Application app) {
 
         ApplicationDTO dto = new ApplicationDTO();
@@ -473,31 +788,47 @@ public class ApplicationService {
         dto.setStatus(app.getStatus());
 
         dto.setLocked(app.isLocked());
-        dto.setLockedAt(app.getLockedAt());
         dto.setSubmittedAt(app.getSubmittedAt());
+        dto.setLockedAt(app.getLockedAt());
 
-        // ================= RELATIONSHIPS =================
+        // ================= REFEREES =================
+        if (app.getReferees() != null) {
 
-        dto.setRefereeIds(
-                app.getReferees() != null
-                        ? app.getReferees().stream().map(r -> r.getId()).toList()
-                        : List.of());
+            dto.setRefereeIds(
+                    app.getReferees()
+                            .stream()
+                            .map(Referee::getId)
+                            .toList());
 
-        dto.setProgrammeChoiceIds(
-                app.getProgrammeChoices() != null
-                        ? app.getProgrammeChoices().stream().map(pc -> pc.getId()).toList()
-                        : List.of());
+            dto.setRefereeCount(app.getReferees().size());
 
-        dto.setPaymentId(
-                app.getPayment() != null ? app.getPayment().getId() : null);
+        } else {
 
-        // ================= COMPUTED =================
+            dto.setRefereeIds(List.of());
+            dto.setRefereeCount(0);
+        }
 
-        dto.setRefereeCount(
-                app.getReferees() != null ? app.getReferees().size() : 0);
+        // ================= PAYMENT =================
+        if (app.getPayment() != null) {
 
-        dto.setPaymentStatus(
-                app.getPayment() != null ? app.getPayment().getStatus() : null);
+            dto.setPaymentId(app.getPayment().getId());
+            dto.setPaymentStatus(app.getPayment().getStatus());
+
+        }
+
+        // ================= PROGRAMME CHOICES =================
+        if (app.getProgrammeChoices() != null) {
+
+            dto.setProgrammeChoiceIds(
+                    app.getProgrammeChoices()
+                            .stream()
+                            .map(ProgrammeChoice::getId)
+                            .toList());
+
+        } else {
+
+            dto.setProgrammeChoiceIds(List.of());
+        }
 
         return dto;
     }

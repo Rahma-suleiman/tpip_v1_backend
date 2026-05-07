@@ -1,11 +1,13 @@
 package com.znz.tpip_backend.service;
 
 import com.znz.tpip_backend.dto.PaymentDTO;
+import com.znz.tpip_backend.enums.ApplicationStep;
 import com.znz.tpip_backend.enums.PaymentStatus;
 import com.znz.tpip_backend.model.Application;
 import com.znz.tpip_backend.model.Payment;
 import com.znz.tpip_backend.repository.*;
 import com.znz.tpip_backend.service.configDrivenApplicationSteps.ApplicationEventPublisherService;
+import com.znz.tpip_backend.service.configDrivenApplicationSteps.ApplicationStepGuard;
 
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
@@ -23,37 +25,37 @@ public class PaymentService {
     private final PaymentReferenceService referenceService;
     private final ApplicationEventPublisherService eventPublisher;
     private final ModelMapper modelMapper;
+private final ApplicationStepGuard stepGuard;
 
-    public PaymentDTO initiatePayment(PaymentDTO dto) {
+ public PaymentDTO initiatePayment(PaymentDTO dto) {
 
-        Application app = applicationRepository.findById(dto.getApplicationId())
-                .orElseThrow(() -> new RuntimeException("Application not found"));
+    Application app = applicationRepository.findById(dto.getApplicationId())
+            .orElseThrow(() -> new RuntimeException("Application not found"));
 
-        paymentRepository.findByApplicationId(app.getId())
-                .ifPresent(p -> {
-                    throw new RuntimeException("Payment already exists");
-                });
+    stepGuard.validateStep(app, ApplicationStep.PAYMENT);
 
-        Payment payment = new Payment();
+    paymentRepository.findByApplicationId(app.getId())
+            .ifPresent(p -> {
+                throw new RuntimeException("Payment already exists");
+            });
 
-        payment.setApplication(app);
-        payment.setAmount(dto.getAmount());
-        payment.setCurrency("TZS");
+    Payment payment = new Payment();
 
-        payment.setChannel(dto.getChannel());
-        payment.setMethod(dto.getMethod());
+    payment.setApplication(app);
+    payment.setAmount(dto.getAmount());
+    payment.setCurrency("TZS");
+    payment.setChannel(dto.getChannel());
+    payment.setMethod(dto.getMethod());
+    payment.setPayerPhone(dto.getPayerPhone());
+    payment.setPayerName(dto.getPayerName());
+    payment.setReferenceNumber(referenceService.generateReference(app.getId()));
+    payment.setStatus(PaymentStatus.PENDING);
+    payment.setInitiatedAt(LocalDateTime.now());
 
-        payment.setPayerPhone(dto.getPayerPhone());
-        payment.setPayerName(dto.getPayerName());
+    Payment saved = paymentRepository.save(payment);
 
-        payment.setReferenceNumber(referenceService.generateReference(app.getId()));
-        payment.setStatus(PaymentStatus.PENDING);
-        payment.setInitiatedAt(LocalDateTime.now());
-
-        Payment saved = paymentRepository.save(payment);
-
-        return modelMapper.map(saved, PaymentDTO.class);
-    }
+    return modelMapper.map(saved, PaymentDTO.class);
+}
 
     public PaymentDTO getPaymentStatus(String ref) {
         return modelMapper.map(
