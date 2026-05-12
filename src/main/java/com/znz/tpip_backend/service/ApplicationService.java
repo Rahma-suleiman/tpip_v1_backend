@@ -11,7 +11,9 @@ import com.znz.tpip_backend.dto.ApplicationFormDto;
 import com.znz.tpip_backend.dto.ApplicationProgressDto;
 import com.znz.tpip_backend.dto.PaymentDTO;
 import com.znz.tpip_backend.dto.PersonalInfoDto;
+// import com.znz.tpip_backend.dto.ProgrammeChoiceDto;
 import com.znz.tpip_backend.dto.StepConfigDto;
+import com.znz.tpip_backend.email.RefereeEmailService;
 // import com.znz.tpip_backend.controller.ApplicationProgressDto;
 import com.znz.tpip_backend.enums.ApplicationStatus;
 import com.znz.tpip_backend.enums.ApplicationStep;
@@ -39,6 +41,11 @@ public class ApplicationService {
     private final ApplicationWorkflowConfig workflowConfig;
     private final ProgrammeRepository programmeRepository;
 
+    private final RefereeEmailService refereeEmailService;
+    private final TokenService tokenService;
+
+    private final PaymentReferenceService referenceService;
+
     public List<ApplicationDTO> getAllApplications() {
         return applicationRepository.findAll()
                 .stream()
@@ -46,7 +53,6 @@ public class ApplicationService {
                 .toList();
     }
 
-  
     // ================= GET APPLICATION BY ID =================
     public ApplicationDTO getApplicationById(Long id) {
 
@@ -217,7 +223,8 @@ public class ApplicationService {
             case SUBMISSION -> {
                 // FINAL SAFETY CHECK ONLY
                 // if (!app.isLocked()) {
-                //     throw new IllegalStateException("Application must be locked after submission");
+                // throw new IllegalStateException("Application must be locked after
+                // submission");
                 // }
             }
         }
@@ -430,7 +437,8 @@ public class ApplicationService {
         int totalSteps = ApplicationStep.values().length;
         int currentOrder = app.getCurrentStep().getOrder();
 
-        int progress = (int) ((currentOrder * 100.0) / totalSteps);
+        // int progress = (int) ((currentcode Order * 100.0) / totalSteps);
+        int progress = Math.round(((float) (currentOrder + 1) / totalSteps) * 100);
 
         dto.setProgressPercentage(progress);
         dto.setCurrentStepLabel(app.getCurrentStep().name().replace("_", " "));
@@ -472,7 +480,8 @@ public class ApplicationService {
 
             case WORK_EXPERIENCE -> updateWork(app, dto);
 
-            case PROGRAMME_CHOICE -> updateProgramme(app, dto);
+            // case PROGRAMME_CHOICE -> updateProgramme(app, dto);
+            case PROGRAMME_CHOICE -> updateProgrammeChoice(app, dto);
 
             case REFEREES -> updateReferees(app, dto);
 
@@ -667,42 +676,110 @@ public class ApplicationService {
         }
     }
 
-    private void updateProgramme(Application app, ApplicationFormDto dto) {
+    // ================= PROGRAMME CHOICE =================
+    private void updateProgrammeChoice(Application app, ApplicationFormDto dto) {
 
-        if (dto.getProgrammeChoiceIds() == null ||
-                dto.getProgrammeChoiceIds().isEmpty()) {
+        // ================= VALIDATION =================
+        if (dto.getProgrammeChoices() == null ||
+                dto.getProgrammeChoices().isEmpty()) {
+
             throw new IllegalStateException("Programme choices required");
         }
 
-        // ensure list is initialized
+        // ================= INIT/CLEAR =================
         if (app.getProgrammeChoices() == null) {
+
             app.setProgrammeChoices(new ArrayList<>());
+
         } else {
+
             app.getProgrammeChoices().clear();
         }
 
-        int rank = 1;
+        // ================= MAP + SAVE =================
+        List<ProgrammeChoice> choices = dto.getProgrammeChoices()
+                .stream()
 
-        for (Long programmeId : dto.getProgrammeChoiceIds()) {
+                // skip empty rows from frontend
+                .filter(choiceDto -> choiceDto.getProgrammeId() != null)
 
-            Programme programme = programmeRepository.findById(programmeId)
-                    .orElseThrow(() -> new RuntimeException(
-                            "Programme not found with id: " + programmeId));
+                .map(choiceDto -> {
 
-            ProgrammeChoice pc = new ProgrammeChoice();
+                    Programme programme = programmeRepository
+                            .findById(choiceDto.getProgrammeId())
+                            .orElseThrow(() -> new RuntimeException(
+                                    "Programme not found with id: "
+                                            + choiceDto.getProgrammeId()));
 
-            pc.setApplication(app);
-            pc.setProgramme(programme);
+                    ProgrammeChoice choice = new ProgrammeChoice();
 
-            // REQUIRED FIELD
-            pc.setPreferenceRank(rank++);
+                    // ================= RELATIONSHIPS =================
+                    choice.setApplication(app);
+                    choice.setProgramme(programme);
 
-            // optional defaults (good practice)
-            pc.setIsEligible(null);
-            pc.setMatchScore(null);
+                    // ================= BASIC DATA =================
+                    choice.setPreferenceRank(
+                            choiceDto.getPreferenceRank());
 
-            app.getProgrammeChoices().add(pc);
+                    // ================= ELIGIBILITY =================
+                    applyEligibility(
+                            choice,
+                            app.getApplicant(),
+                            programme);
+
+                    return choice;
+                })
+                .toList();
+
+        // ================= FINAL VALIDATION =================
+        if (choices.isEmpty()) {
+
+            throw new IllegalStateException(
+                    "At least one valid programme choice required");
         }
+
+        app.getProgrammeChoices().addAll(choices);
+    }
+
+    private void applyEligibility(
+            ProgrammeChoice choice,
+            Applicant applicant,
+            Programme programme) {
+
+        List<Education> educations = applicant.getEducations();
+
+        if (educations == null || educations.isEmpty()) {
+
+            choice.setIsEligible(false);
+            choice.setMatchScore(0);
+            choice.setEligibilityRemark("No education found");
+
+            return;
+        }
+
+        Education highest = getHighestEducation(educations);
+
+        boolean eligible = highest.getLevel().ordinal() >= programme.getRequiredLevel().ordinal();
+
+        choice.setIsEligible(eligible);
+
+        choice.setMatchScore(
+                eligible ? 80 : 40);
+
+        choice.setEligibilityRemark(
+                eligible
+                        ? "Eligible"
+                        : "Not eligible");
+    }
+
+    private Education getHighestEducation(
+            List<Education> educations) {
+
+        return educations.stream()
+                .max((e1, e2) -> Integer.compare(
+                        e1.getLevel().ordinal(),
+                        e2.getLevel().ordinal()))
+                .orElseThrow(() -> new RuntimeException("No education found"));
     }
 
     private void updateReferees(Application app, ApplicationFormDto dto) {
@@ -711,7 +788,7 @@ public class ApplicationService {
             throw new IllegalStateException("Minimum 2 referees required");
         }
 
-        // clear existing referees
+        // clear existing
         app.getReferees().clear();
 
         dto.getReferees().forEach(r -> {
@@ -727,54 +804,94 @@ public class ApplicationService {
             ref.setPhone(r.getPhone());
             ref.setRelationship(r.getRelationship());
 
-            // default status (optional but good practice)
+            // ================= FIX: ADD TOKEN LOGIC =================
+            String token = tokenService.generateToken();
+
             ref.setStatus(RefereeStatus.PENDING);
+            ref.setToken(token);
+            ref.setTokenExpiry(tokenService.expiryTime());
 
             app.getReferees().add(ref);
+
+            // optional: send email immediately
+            refereeEmailService.sendInvitation(ref);
         });
     }
+    // private void updateReferees(Application app, ApplicationFormDto dto) {
 
-    private void updatePayment(Application app, ApplicationFormDto dto) {
+    // if (dto.getReferees() == null || dto.getReferees().size() < 2) {
+    // throw new IllegalStateException("Minimum 2 referees required");
+    // }
 
-        if (dto.getPayment() == null ||
-                dto.getPayment().getReferenceNumber() == null ||
-                dto.getPayment().getReferenceNumber().isBlank()) {
+    // // clear existing referees
+    // app.getReferees().clear();
 
-            throw new IllegalStateException("Payment reference required");
-        }
+    // dto.getReferees().forEach(r -> {
 
-        Payment payment = app.getPayment();
+    // Referee ref = new Referee();
 
-        // ================= CREATE PAYMENT IF NULL =================
-        if (payment == null) {
+    // ref.setApplication(app);
 
-            payment = new Payment();
+    // ref.setFullName(r.getFullName());
+    // ref.setTitle(r.getTitle());
+    // ref.setOrganization(r.getOrganization());
+    // ref.setEmail(r.getEmail());
+    // ref.setPhone(r.getPhone());
+    // ref.setRelationship(r.getRelationship());
 
-            payment.setApplication(app);
-            payment.setInitiatedAt(LocalDateTime.now());
-            payment.setStatus(PaymentStatus.PENDING);
+    // // default status (optional but good practice)
+    // ref.setStatus(RefereeStatus.PENDING);
 
-            // set reference ONLY ONCE (immutable field)
-            payment.setReferenceNumber(dto.getPayment().getReferenceNumber());
+    // app.getReferees().add(ref);
+    // });
+    // }
 
-            app.setPayment(payment);
-        }
+  private void updatePayment(Application app, ApplicationFormDto dto) {
 
-        // ================= UPDATE SAFE FIELDS =================
-        PaymentDTO paymentDTO = dto.getPayment();
-
-        payment.setUpdatedAt(LocalDateTime.now());
-
-        // optional fields (safe updates)
-        payment.setAmount(paymentDTO.getAmount());
-        payment.setCurrency(paymentDTO.getCurrency());
-        payment.setMethod(paymentDTO.getMethod());
-        payment.setChannel(paymentDTO.getChannel());
-        payment.setPayerPhone(paymentDTO.getPayerPhone());
-        payment.setPayerName(paymentDTO.getPayerName());
-
-        // DO NOT overwrite referenceNumber again (immutable rule)
+    if (dto.getPayment() == null) {
+        throw new IllegalStateException("Payment data required");
     }
+
+    PaymentDTO paymentDTO = dto.getPayment();
+
+    Payment payment = app.getPayment();
+
+    // ================= CREATE PAYMENT =================
+    if (payment == null) {
+
+        payment = new Payment();
+
+        payment.setApplication(app);
+
+        // AUTO GENERATED
+        payment.setReferenceNumber(
+                referenceService.generateReference(app.getId()));
+
+        payment.setInitiatedAt(LocalDateTime.now());
+
+        // DEFAULT STATUS
+        payment.setStatus(PaymentStatus.PENDING);
+
+        app.setPayment(payment);
+    }
+
+    // ================= UPDATE PAYMENT =================
+    payment.setUpdatedAt(LocalDateTime.now());
+
+    payment.setAmount(paymentDTO.getAmount());
+    payment.setCurrency(
+            paymentDTO.getCurrency() != null
+                    ? paymentDTO.getCurrency()
+                    : "TZS");
+
+    payment.setMethod(paymentDTO.getMethod());
+    payment.setChannel(paymentDTO.getChannel());
+
+    payment.setPayerPhone(paymentDTO.getPayerPhone());
+    payment.setPayerName(paymentDTO.getPayerName());
+
+    // NEVER overwrite reference number
+}
 
     // ================= MAP ENTITY TO DTO =================
     private ApplicationDTO mapToDTO(Application app) {
@@ -834,7 +951,7 @@ public class ApplicationService {
     }
 }
 // Next we will validate:
-// 👉 "data inside each step"
+// "data inside each step"
 
 // Example:
 

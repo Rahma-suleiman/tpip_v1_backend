@@ -137,6 +137,28 @@ private final ApplicationStepGuard stepGuard;
 //   "payerName": "Rahma Suleiman",
 //   "feeWaived": false
 // }
+
+// husna
+// {
+//   "amount": 20000,
+//   "currency": "TZS",
+//   "channel": "TIGO_PESA",
+//   "method": "MOBILE_MONEY",
+//   "applicationId": 7,
+//   "payerPhone": "+255712345678",
+//   "payerName": "Husna Suleiman",
+//   "feeWaived": false
+// }
+// {
+//   "amount": 20000,
+//   "currency": "TZS",
+//   "channel": "MPESA",
+//   "method": "MOBILE_MONEY",
+//   "applicationId": 8,
+//   "payerPhone": "+255712345676",
+//   "payerName": "Marjan",
+//   "feeWaived": false
+// }
 // Real MPESA Daraja API integration
 // ✔ 
 // Real Tigo Pesa API flow

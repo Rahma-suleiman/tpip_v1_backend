@@ -247,3 +247,21 @@ public class WorkExperienceService {
 // "city": "Zanzibar",
 // "applicantId": 4
 // }
+// {
+//   "employerName": "Zanzibar ICT Commission",
+//   "employerAddress": "Kilimani, Zanzibar",
+//   "employerPhone": "+255713456789",
+//   "employerEmail": "hr@zict.go.tz",
+//   "jobTitle": "Software Developer",
+//   "department": "ICT Department",
+//   "responsibilities": "Developing and maintaining web applications, database management, API integration, and system support.",
+//   "startDate": "2024-07-01",
+//   "endDate": "2026-05-12",
+//   "isCurrentlyEmployed": true,
+//   "employmentType": "FULL_TIME",
+//   "country": "Tanzania",
+//   "region": "URBAN_WEST",
+//   "district": "MJINI",
+//   "city": "Zanzibar City",
+//   "applicantId": 10
+// }

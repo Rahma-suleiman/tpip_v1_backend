@@ -16,9 +16,10 @@ public class ApplicationFormDto {
     private Boolean hasWorkExperience;
     private List<WorkExperienceDto> workExperiences;
 
-    // ================= STEP 4: PROGRAMMES (LINKING EXISTING DATA) =================
-    private List<Long> programmeChoiceIds;
-
+    // ================= STEP 4: PROGRAMMES (LINKING EXISTING DATA)
+    // =================
+    // private List<Long> programmeChoiceIds;
+    private List<ProgrammeChoiceDto> programmeChoices;
     // ================= STEP 5: REFEREES =================
     private List<RefereeDTO> referees;
 

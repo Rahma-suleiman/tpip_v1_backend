@@ -322,3 +322,27 @@ public class EducationService {
 // "applicantId": 4,
 // "subjects": []
 // }
+// {
+//   "level": "BACHELOR",
+//   "institutionName": "University of Dar es Salaam",
+//   "programmeName": "Bachelor of Science in Computer Science",
+//   "completionYear": 2024,
+//   "gpa": "4.1",
+//   "classification": "UPPER_SECOND",
+//   "description": "Graduated with strong performance in software engineering, databases, and web development.",
+//   "applicantId": 10,
+//   "subjects": [
+//     {
+//       "subjectName": "Database Systems",
+//       "grade": "A"
+//     },
+//     {
+//       "subjectName": "Software Engineering",
+//       "grade": "A"
+//     },
+//     {
+//       "subjectName": "Computer Networks",
+//       "grade": "B+"
+//     }
+//   ]
+// }

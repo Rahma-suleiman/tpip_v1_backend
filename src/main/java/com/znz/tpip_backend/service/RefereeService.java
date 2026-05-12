@@ -202,3 +202,41 @@ public class RefereeService {
 // "relationship": "Technical Supervisor",
 // "applicationId": 4
 // }
+
+//   {
+//     "fullName": "Rahma Suleiman",
+//     "title": "Senior Lecturer",
+//     "organization": "State University of Zanzibar",
+//     "email": "suleimanr166@gmail.com",
+//     "phone": "+255712345678",
+//     "relationship": "Academic Referee",
+//     "applicationId": 7
+//   }
+//   {
+//     "fullName": "Mohamed Ali",
+//     "title": "ICT Manager",
+//     "organization": "Zanzibar Tech Solutions",
+//     "email": "mohamed.ali@ztech.co.tz",
+//     "phone": "+255754987654",
+//     "relationship": "Professional Referee",
+//     "applicationId": 7
+//   }
+
+// {
+//   "fullName": "Dr. Rahma Suleiman",
+//   "title": "Senior Lecturer",
+//   "organization": "University of Dar es Salaam",
+//   "email": "suleimanr166@gmail.com",
+//   "phone": "+255766081213",
+//   "relationship": "Academic Referee",
+//   "applicationId": 8
+// }
+// {
+//   "fullName": "Mohamed Juma",
+//   "title": "ICT Director",
+//   "organization": "Zanzibar ICT Commission",
+//   "email": "mohamed.juma@zict.go.tz",
+//   "phone": "+255718222333",
+//   "relationship": "Professional Referee",
+//   "applicationId": 8
+// }
