@@ -92,21 +92,51 @@ public class ApplicationService {
     }
 
     // ================= MOVE STEP =================
-    public ApplicationDTO moveToStep(Long applicationId, ApplicationStep nextStep) {
+    // public ApplicationDTO moveToStep(Long applicationId, ApplicationStep
+    // nextStep) {
+
+    // Application app = getApplication(applicationId);
+
+    // checkIfLocked(app);
+
+    // validateStepCompletion(app, app.getCurrentStep());
+
+    // if (!isValidStepTransition(app.getCurrentStep(), nextStep)) {
+    // throw new IllegalStateException("Invalid step transition");
+    // }
+
+    // app.setCurrentStep(nextStep);
+
+    // return mapToDTO(applicationRepository.save(app));
+    // }
+    public ApplicationDTO moveToStep(
+            Long applicationId,
+            ApplicationStep nextStep) {
 
         Application app = getApplication(applicationId);
 
         checkIfLocked(app);
 
-        validateStepCompletion(app, app.getCurrentStep());
+        // VALIDATE ONLY WHEN MOVING FORWARD
+        if (nextStep.getOrder() > app.getCurrentStep().getOrder()) {
 
-        if (!isValidStepTransition(app.getCurrentStep(), nextStep)) {
-            throw new IllegalStateException("Invalid step transition");
+            validateStepCompletion(
+                    app,
+                    app.getCurrentStep());
+        }
+
+        if (!isValidStepTransition(
+                app.getCurrentStep(),
+                nextStep)) {
+
+            throw new IllegalStateException(
+                    "Invalid step transition");
         }
 
         app.setCurrentStep(nextStep);
 
-        return mapToDTO(applicationRepository.save(app));
+        return mapToDTO(
+                applicationRepository.save(app));
     }
 
     // ================= SUBMIT =================
@@ -236,9 +266,26 @@ public class ApplicationService {
             throw new IllegalStateException("Applicant missing");
         }
 
-        // Example (expand when you add PersonalInfo entity)
-        if (app.getApplicant().getUser() == null) {
-            throw new IllegalStateException("User profile incomplete");
+        PersonalInfo info = app.getApplicant().getPersonalInfo();
+
+        if (info == null) {
+            throw new IllegalStateException("Personal information not completed");
+        }
+
+        if (info.getFirstName() == null || info.getFirstName().isBlank()) {
+            throw new IllegalStateException("First name is required");
+        }
+
+        if (info.getLastName() == null || info.getLastName().isBlank()) {
+            throw new IllegalStateException("Last name is required");
+        }
+
+        if (info.getEmail() == null || info.getEmail().isBlank()) {
+            throw new IllegalStateException("Email is required");
+        }
+
+        if (info.getDateOfBirth() == null) {
+            throw new IllegalStateException("Date of birth is required");
         }
     }
 
@@ -846,52 +893,52 @@ public class ApplicationService {
     // });
     // }
 
-  private void updatePayment(Application app, ApplicationFormDto dto) {
+    private void updatePayment(Application app, ApplicationFormDto dto) {
 
-    if (dto.getPayment() == null) {
-        throw new IllegalStateException("Payment data required");
+        if (dto.getPayment() == null) {
+            throw new IllegalStateException("Payment data required");
+        }
+
+        PaymentDTO paymentDTO = dto.getPayment();
+
+        Payment payment = app.getPayment();
+
+        // ================= CREATE PAYMENT =================
+        if (payment == null) {
+
+            payment = new Payment();
+
+            payment.setApplication(app);
+
+            // AUTO GENERATED
+            payment.setReferenceNumber(
+                    referenceService.generateReference(app.getId()));
+
+            payment.setInitiatedAt(LocalDateTime.now());
+
+            // DEFAULT STATUS
+            payment.setStatus(PaymentStatus.PENDING);
+
+            app.setPayment(payment);
+        }
+
+        // ================= UPDATE PAYMENT =================
+        payment.setUpdatedAt(LocalDateTime.now());
+
+        payment.setAmount(paymentDTO.getAmount());
+        payment.setCurrency(
+                paymentDTO.getCurrency() != null
+                        ? paymentDTO.getCurrency()
+                        : "TZS");
+
+        payment.setMethod(paymentDTO.getMethod());
+        payment.setChannel(paymentDTO.getChannel());
+
+        payment.setPayerPhone(paymentDTO.getPayerPhone());
+        payment.setPayerName(paymentDTO.getPayerName());
+
+        // NEVER overwrite reference number
     }
-
-    PaymentDTO paymentDTO = dto.getPayment();
-
-    Payment payment = app.getPayment();
-
-    // ================= CREATE PAYMENT =================
-    if (payment == null) {
-
-        payment = new Payment();
-
-        payment.setApplication(app);
-
-        // AUTO GENERATED
-        payment.setReferenceNumber(
-                referenceService.generateReference(app.getId()));
-
-        payment.setInitiatedAt(LocalDateTime.now());
-
-        // DEFAULT STATUS
-        payment.setStatus(PaymentStatus.PENDING);
-
-        app.setPayment(payment);
-    }
-
-    // ================= UPDATE PAYMENT =================
-    payment.setUpdatedAt(LocalDateTime.now());
-
-    payment.setAmount(paymentDTO.getAmount());
-    payment.setCurrency(
-            paymentDTO.getCurrency() != null
-                    ? paymentDTO.getCurrency()
-                    : "TZS");
-
-    payment.setMethod(paymentDTO.getMethod());
-    payment.setChannel(paymentDTO.getChannel());
-
-    payment.setPayerPhone(paymentDTO.getPayerPhone());
-    payment.setPayerName(paymentDTO.getPayerName());
-
-    // NEVER overwrite reference number
-}
 
     // ================= MAP ENTITY TO DTO =================
     private ApplicationDTO mapToDTO(Application app) {

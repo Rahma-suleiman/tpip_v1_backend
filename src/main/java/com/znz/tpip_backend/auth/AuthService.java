@@ -172,6 +172,36 @@ public class AuthService {
 // "password": "mar@234",
 // "indexNumber": "S6578-0315-2032"
 // }
+// Mahmoud Applicant 11, application 9
+// {
+// "firstName": "Mahmoud",
+// "middleName": "Sule",
+// "lastName": "Abda",
+// "email": "mah@gmail.com",
+// "mobileNumber": "0635627800",
+// "password": "mah@234",
+// "indexNumber": "S6578-0315-2022"
+// }
+// Haitham Applicant 12, application 10
+// {
+// "firstName": "Haitham",
+// "middleName": "Sule",
+// "lastName": "Abda",
+// "email": "hay@gmail.com",
+// "mobileNumber": "0635607800",
+// "password": "hay@234",
+// "indexNumber": "S6578-0315-2023"
+// }
+// Ilham Applicant 13, application 11
+// {
+// "firstName": "Ilham",
+// "middleName": "Sule",
+// "lastName": "Abda",
+// "email": "ham@gmail.com",
+// "mobileNumber": "0635607800",
+// "password": "ham@234",
+// "indexNumber": "S6578-0315-2024"
+// }
 // {
 // "firstName": "Admin",
 // "middleName": "Admin",
